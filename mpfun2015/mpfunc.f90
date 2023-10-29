@@ -3,7 +3,7 @@
 !  MPFUN-Fort: A thread-safe arbitrary precision computation package
 !  Binary-decimal, decimal-binary and I/O functions (module MPFUNC)
 
-!  Revision date:  19 Jul 2015
+!  Revision date:  14 Jun 2021
 
 !  AUTHOR:
 !     David H. Bailey
@@ -11,7 +11,7 @@
 !     Email: dhbailey@lbl.gov
 
 !  COPYRIGHT AND DISCLAIMER:
-!    All software in this package (c) 2015 David H. Bailey.
+!    All software in this package (c) 2021 David H. Bailey.
 !    By downloading or using this software you agree to the copyright, disclaimer
 !    and license agreement in the accompanying file DISCLAIMER.txt.
 
@@ -51,7 +51,7 @@ contains
 
 subroutine mpctomp (a, n, b, mpnw)
 
-!  Converts the CHARACTER*1 array A of length N into the MPR number B.
+!  Converts the character(1) array A of length N into the MPR number B.
 !  Restrictions: (a) no embedded blanks; (b) a leading digit (possibly
 !  zero) must be present; and (c) a period must be present.  An exponent
 !  (with "d" or "e") may optionally follow the numeric value.
@@ -60,12 +60,12 @@ implicit none
 integer i, i1, i2, iexp, isgn, iexpsgn, ix, j, kde, kend, kexpend, kexpst, &
   kexpsgn, knumend1, knumend2, knumst1, knumst2, kper, ksgn, kstart, lexp, &
   lexpmx, lnum, lnum1, lnum2, mpnw, mpnw1, n, n1, n2
-double precision d10w, t1, t2
-character*1 a(n), ai
-character*10 digits
-character*32 ca
+real (mprknd) d10w, t1, t2
+character(1) a(n), ai
+character(10) digits
+character(32) ca
 parameter (lexpmx = 9, digits = '0123456789', d10w = 10.d0**mpndpw)
-double precision b(0:mpnw+5), f(0:8), s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6)
+real (mprknd) b(0:), f(0:8), s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6)
 
 ! write (6, *) 'mpctomp: a, n, mpnw =', n, mpnw
 ! write (6, '(100a1)') 'X',(a(i),i=1,n),'X'
@@ -82,7 +82,7 @@ s0(0) = mpnw + 7
 s1(0) = mpnw + 7
 s2(0) = mpnw + 7
 f(0) = 9.d0
-f(1) = mpnw1
+f(1) = mpnw
 
 do i = 2, 8
   f(i) = 0.d0
@@ -112,8 +112,8 @@ enddo
 
 !   Input is completely blank.
 
-write (6, 2)
-2 format ('*** MPCTOMP: Syntax error in input string.'/ &
+write (6, 2) 1
+2 format ('*** MPCTOMP: Syntax error in input string; code =',i4/ &
   'Restrictions: (a) no embedded blanks; (b) a leading digit (possibly'/ &
   'zero) must be present; and (c) a period must be present.  An exponent'/ &
   '(with "d" or "e") may optionally follow the numeric value.')
@@ -147,7 +147,7 @@ kend = i
 
 do i = kstart, kend
   if (a(i) == ' ') then
-    write (6, 2)
+    write (6, 2) 2
     call mpabrt (41)
   elseif (a(i) == '+' .or. a(i) == '-') then
     if (i == kstart) then
@@ -155,7 +155,7 @@ do i = kstart, kend
     elseif (kde > 0 .and. kexpsgn == 0 .and. kexpst == 0 .and. i < kend) then
       kexpsgn = i
     else
-      write (6, 2)
+      write (6, 2) 3
       call mpabrt (41)
     endif
   elseif (a(i) == 'e' .or. a(i) == 'E' .or. a(i) == 'd' .or. a(i) == 'D') then
@@ -163,7 +163,7 @@ do i = kstart, kend
       kde = i
       knumend2 = i - 1
     else
-      write (6, 2)
+      write (6, 2) 4
       call mpabrt (41)
     endif
   elseif (a(i) == '.') then
@@ -171,7 +171,7 @@ do i = kstart, kend
       kper = i
       knumend1 = i - 1
     else
-      write (6, 2)
+      write (6, 2) 5
       call mpabrt (41)
     endif
   elseif (index (digits, a(i)) > 0) then
@@ -188,12 +188,12 @@ do i = kstart, kend
       elseif (kexpst > 0) then
         kexpend = i
       else
-        write (6, 2)
+        write (6, 2) 6
         call mpabrt (41)
       endif
     endif
   else
-    write (6, 2)
+    write (6, 2) 7
     call mpabrt (41)
   endif
 enddo
@@ -217,14 +217,18 @@ if (kexpst > 0) then
   enddo
 
   iexp = mpdigin (ca, lexp)
-  if (a(kexpsgn) == '-') iexp = -iexp
+  if (kexpsgn > 0) then
+    if (a(kexpsgn) == '-') iexp = -iexp
+  endif
 else
   iexp = 0
 endif
 
 !   Determine sign of number.
 
-if (ksgn == 0 .or. a(ksgn) == '+') then
+if (ksgn == 0) then
+  isgn = 1
+elseif (a(ksgn) == '+') then
   isgn = 1
 elseif (a(ksgn) == '-') then
   isgn = -1
@@ -302,7 +306,9 @@ f(3) = 0.d0
 f(4) = 10.d0
 call mpnpwr (f, iexp, s1, mpnw1)
 call mpmul (s0, s1, s2, mpnw1)
-if (a(ksgn) == '-') s2(2) = -s2(2)
+if (ksgn > 0) then
+  if (a(ksgn) == '-') s2(2) = -s2(2)
+endif
 
 !   Restore original precision and exit.
 
@@ -315,16 +321,16 @@ call mpeq (s2, b, mpnw)
 return
 end subroutine mpctomp
 
-double precision function mpdigin (ca, n)
+real (mprknd) function mpdigin (ca, n)
 
 !   This converts the string CA of nonblank length N to double precision.
 !   CA may only be modest length and may only contain digits.  Blanks are ignored.
 !   This is intended for internal use only.  
 
   implicit none
-  double precision d1
-  character*(*), ca
-  character*10 digits
+  real (mprknd) d1
+  character(*) ca
+  character(10) digits
   integer i, k, n
   parameter (digits = '0123456789')
 
@@ -348,16 +354,16 @@ double precision function mpdigin (ca, n)
   mpdigin = d1
 end function mpdigin
 
-character*32 function mpdigout (a, n)
+character(32) function mpdigout (a, n)
 
-!   This converts the double precision input A to a character*32 string of 
+!   This converts the double precision input A to a character(32) string of 
 !   nonblank length N.  A must be a whole number, and N must be sufficient
 !   to hold it.  This is intended for internal use only.
 
   implicit none
-  double precision a, d1, d2
-  character*32 ca
-  character*10 digits
+  real (mprknd) a, d1, d2
+  character(32) ca
+  character(10) digits
   parameter (digits = '0123456789')
   integer i, k, n
 
@@ -379,7 +385,7 @@ end function mpdigout
 
 subroutine mpeformat (a, nb, nd, b, mpnw)
 
-!   Converts the MPR number A into character form in the CHARACTER*1 array B.
+!   Converts the MPR number A into character form in the character(1) array B.
 !   NB (input) is the length of the output string, and ND (input) is the
 !   number of digits after the decimal point.  The format is analogous to 
 !   Fortran E format.  The result is left-justified among the NB cells of B.
@@ -388,12 +394,12 @@ subroutine mpeformat (a, nb, nd, b, mpnw)
 
 implicit none
 integer i, ia, ix, ixp, i1, i2, j, k, mpnw, mpnw1, na, nb, nd, nexp, nl
-character*1 b(nb), b2(nb+50)
-character*10 digits
+character(1) b(nb), b2(nb+50)
+character(10) digits
 parameter (digits = '0123456789')
-character*32 ca
-double precision aa, an, t1, t2
-double precision a(0:mpnw+5), f(0:8), s0(0:mpnw+6), s1(0:mpnw+6), d10w
+character(32) ca
+real (mprknd) aa, an, t1, t2
+real (mprknd) a(0:), f(0:8), s0(0:mpnw+6), s1(0:mpnw+6), d10w
 
 ! End of declaration
 
@@ -606,23 +612,23 @@ end subroutine mpeformat
 
 subroutine mpfformat (a, nb, nd, b, mpnw)
 
-!   Converts the MPR number A into character form in the CHARACTER*1 array B.
+!   Converts the MPR number A into character form in the character(1) array B.
 !   NB (input) is the length of the output string, and ND (input) is the
 !   number of digits after the decimal point.  The format is analogous to 
 !   Fortran F format; the result is right-justified among the NB cells of B.
 !   The condition NB >= ND + 10 must hold or an error message will result.
 !   However, if it is found during execution that there is not sufficient space,
 !   to hold all digits, the entire output field will be filled with asterisks.
-!   NB cells of type CHARACTER*1 must be available in B.
+!   NB cells of type character(1) must be available in B.
 
 implicit none
 integer i, ia, ix, ixp, i1, i2, j, k, mpnw, mpnw1, na, nb, nb2, nd, &
   nexp, nl, n2
-character*1 b(nb), b2(nb+20)
-character*16 ca
-double precision aa, an, an1, t1
-double precision a(0:mpnw+5), f(0:8), s0(0:mpnw+6), s1(0:mpnw+6)
-! character*16 mpdigout
+character(1) b(nb), b2(nb+20)
+character(16) ca
+real (mprknd) aa, an, an1, t1
+real (mprknd) a(0:), f(0:8), s0(0:mpnw+6), s1(0:mpnw+6)
+! character(16) mpdigout
 
 ! End of declaration
 
@@ -701,7 +707,7 @@ if (t1 + nd + 3 > nb) then
     b(i) = '*'
   enddo
 
-  goto 200
+  goto 210
 endif
 nexp = ixp * t1
 
@@ -798,6 +804,8 @@ do i = 1, k
   b(i) = ' '
 enddo
 
+210 continue
+
 return
 end subroutine mpfformat
 
@@ -807,10 +815,9 @@ subroutine mpinp (iu, a, mpnw)
 !   may span more than one line, provided that a "\" appears at the end of 
 !   a line to be continued (any characters after the "\" on the same line
 !   are ignored).  Individual input lines may not exceed 2048 characters in
-!   length (although this can be changed here and in the system parameters
-!   (parameter mpnstr) at the beginning of this module.  Embedded blanks are
-!   allowed anywhere. An exponent with "e" or "d" may optionally follow the
-!   numeric value.
+!   length, although this limit can be changed in the system parameters
+!   (parameter mpnstr) in module MPFUNA.  Embedded blanks are allowed anywhere.
+!   An exponent with "e" or "d" may optionally follow the numeric value.
 
 !   A scratch array below (CHR1) holds character data for input to mpctomp.
 !   It is dimensioned MPNW * (MPNDPW + 1) + 1000 (see below).  If more nonblank
@@ -818,11 +825,11 @@ subroutine mpinp (iu, a, mpnw)
 
 implicit none
 integer i, i1, iu, lnc1, lncx, ln1, mpnw
-character*2048 line1
-character*18 validc
+character(mpnstr) line1
+character(18) validc
 parameter (validc = ' 0123456789+-.dDeE')
-character*1 chr1(mpnw*(mpndpw+1)+1000)
-double precision a(0:mpnw+5)
+character(1) chr1(mpnw*(mpndpw+1)+1000)
+real (mprknd) a(0:)
 
 ! End of declaration
 
@@ -865,7 +872,7 @@ do i = 1, ln1
   elseif (line1(i:i) .ne. ' ') then
     if (lnc1 < lncx) then
       lnc1 = lnc1 + 1
-      chr1(i) = line1(i:i)
+      chr1(lnc1) = line1(i:i)
     endif
   endif
 enddo
@@ -890,9 +897,9 @@ subroutine mpout (iu, ln, nd, a, mpnw)
 
 implicit none
 integer i, iu, ln, ln1, mpnw, nd
-character*1 chr1(ln)
-character*32 cform1, cform2
-double precision a(0:mpnw+5)
+character(1) chr1(ln)
+character(32) cform1, cform2
+real (mprknd) a(0:)
 
 ! End of declaration
 

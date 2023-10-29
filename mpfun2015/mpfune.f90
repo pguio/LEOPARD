@@ -3,7 +3,7 @@
 !  MPFUN-Fort: A thread-safe arbitrary precision computation package
 !  Special functions module (module MPFUNE)
 
-!  Revision date:  8 Feb 2016
+!  Revision date:  14 Jun 2021
 
 !  AUTHOR:
 !     David H. Bailey
@@ -11,7 +11,7 @@
 !     Email: dhbailey@lbl.gov
 
 !  COPYRIGHT AND DISCLAIMER:
-!    All software in this package (c) 2015 David H. Bailey.
+!    All software in this package (c) 2021 David H. Bailey.
 !    By downloading or using this software you agree to the copyright, disclaimer
 !    and license agreement in the accompanying file DISCLAIMER.txt.
 
@@ -55,16 +55,16 @@ subroutine mpberner (nb1, nb2, berne, mpnw)
 !  B(2*nb2).  The array berne must be dimensioned as shown below.
 
 implicit none
-integer k, nb1, nb2, mpnw, mpnw1
-double precision berne(0:nb1+5,nb2), t1(0:mpnw+6), t2(0:mpnw+6), &
+integer i, ia, k, na, nb1, nb2, mpnw, mpnw1
+real (mprknd) berne(0:nb1+5,nb2), t1(0:mpnw+6), t2(0:mpnw+6), &
   t3(0:mpnw+6), t4(0:mpnw+6), t5(0:mpnw+6)
 
 !  End of declaration
 
 if (mpnw < 4 .or. berne(0,1) < mpnw + 4 .or. berne(0,nb2) < mpnw + 4) &
   then
-  write (mpldb, 2) int (mpndpw * mpnw)
-2 format ('*** MPBERN: unitialized or inadequately sized arrays')
+  write (mpldb, 2)
+2 format ('*** MPBERN: uninitialized or inadequately sized arrays')
   call mpabrt (62)
 endif
 
@@ -87,7 +87,24 @@ do k = 1, nb2
   call mpzetar (t3, t4, mpnw1)
   call mpmul (t1, t4, t5, mpnw1)
   call mproun (t5, mpnw)
-  call mpeq (t5, berne(0,k), mpnw)
+
+!   The next few lines (to !+) are necessary, rather than a simple call to
+!   mpeq, to avoid a Fortran rank-mismatch error.
+
+!  call mpeq (t5, berne(0,k), mpnw)
+
+  ia = sign (1.d0, t5(2))
+  na = min (int (abs (t5(2))), mpnw)
+  berne(1,k) = mpnw
+  berne(2,k) = sign (na, ia)
+
+  do i = 2, na + 2
+    berne(i+1,k) = t5(i+1)
+  enddo
+
+  berne(na+4,k) = 0.d0
+  berne(na+5,k) = 0.d0
+!+
 enddo
 
 return
@@ -107,7 +124,7 @@ subroutine mpbesseljr (anu, t, z, mpnw)
 
 implicit none
 integer i, itrmx, j, mpnw, mpnw1, ndp, nu, n1
-double precision dasy, anu(0:mpnw+5), anumx, t(0:mpnw+5), z(0:mpnw+5), &
+real (mprknd) dasy, anu(0:), anumx, t(0:), z(0:), &
   t0(0:3*mpnw/2+5), t1(0:3*mpnw/2+5), t2(0:3*mpnw/2+5), t3(0:3*mpnw/2+5), &
   t4(0:3*mpnw/2+5), t5(0:3*mpnw/2+5), t6(0:3*mpnw/2+5)
 parameter (itrmx = 100000, dasy = 25.d0, anumx = 1.d6)
@@ -252,6 +269,437 @@ call mpeq (t0, z, mpnw)
 return
 end subroutine mpbesseljr
 
+subroutine mperfr (z, terf, mpnw)
+
+!   This evaluates the erf function, using a combination of two series.
+!   In particular, the algorithm is (where B = (mpnw + 1) * mpnbt, and
+!   dcon is a constant defined below):
+
+!   if (t == 0) then
+!     erf = 0
+!   elseif (z > sqrt(B*log(2))) then
+!     erf = 1
+!   elseif (z < -sqrt(B*log(2))) then
+!     erf = -1
+!   elseif (abs(z) < B/dcon + 8) then
+!     erf = 2 / (sqrt(pi)*exp(z^2)) * Sum_{k>=0} 2^k * z^(2*k+1) 
+!             / (1.3....(2*k+1))
+!   else
+!     erf = 1 - 1 / (sqrt(pi)*exp(z^2)) 
+!             * Sum_{k>=0} (-1)^k * (1.3...(2*k-1)) / (2^k * z^(2*k+1))
+!   endif
+
+implicit none
+integer i, ic1, ic2, ic3, itrmx, j, k, mpnw, mpnw1, nbt, neps
+real (mprknd) dcon, d1, d2, d3
+parameter (dcon = 100.d0, itrmx = 100000)
+real (mprknd) eps(0:mpnw+6), terf(0:), &
+  t1(0:mpnw+6), t2(0:mpnw+6), t3(0:mpnw+6), t4(0:mpnw+6), &
+  t5(0:mpnw+6), t6(0:mpnw+6), t7(0:mpnw+6), z(0:), z2(0:mpnw+6)
+
+! End of declaration
+
+if (mpnw < 4 .or. z(0) < mpnw + 4 .or. z(0) < abs (terf(2)) + 4 .or. &
+  terf(0) < mpnw + 6) then
+  write (mpldb, 1)
+1 format ('*** MPERFR: uninitialized or inadequately sized arrays')
+  call mpabrt (99)
+endif
+
+mpnw1 = mpnw + 1
+eps(0) = mpnw1 + 7
+t1(0) = mpnw1 + 7
+t2(0) = mpnw1 + 7
+t3(0) = mpnw1 + 7
+t4(0) = mpnw1 + 7
+t5(0) = mpnw1 + 7
+t6(0) = mpnw1 + 7
+t7(0) = mpnw1 + 7
+z2(0) = mpnw1 + 7
+
+nbt = mpnw * mpnbt
+d1 = aint (1.d0 + sqrt (nbt * log (2.d0)))
+d2 = aint (nbt / dcon + 8.d0)
+call mpdmc (d1, 0, t1, mpnw1)
+call mpdmc (d2, 0, t2, mpnw1)
+call mpcpr (z, t1, ic1, mpnw1)
+t1(2) = - t1(2)
+call mpcpr (z, t1, ic2, mpnw1)
+call mpcpr (z, t2, ic3, mpnw1)
+
+!if (z == 0.d0) then
+if (z(2) == 0.d0) then
+
+!  terf = mpreal (0.d0, nwds)
+  call mpdmc (0.d0, 0, terf, mpnw)
+
+!elseif (z > d2) then
+elseif (ic1 > 0) then
+
+!  terf = mpreal (1.d0, nwds)
+  call mpdmc (1.d0, 0, terf, mpnw)
+
+!elseif (z < -d2) then
+elseif (ic2 < 0) then
+
+!  terf = mpreal (-1.d0, nwds)
+  call mpdmc (-1.d0, 0, terf, mpnw)
+
+!elseif (abs (z) < d3) then
+elseif (ic3 < 0) then
+
+!  eps = mpreal (2.d0, nwds) ** (-nbt)
+  call mpdmc (1.d0, -nbt, eps, mpnw1)
+
+!  z2 = z**2
+  call mpmul (z, z, z2, mpnw1)
+
+!  t1 = mpreal (0.d0, nwds)
+  call mpdmc (0.d0, 0, t1, mpnw1)
+
+!  t2 = z
+  call mpeq (z, t2, mpnw1)
+
+!  t3 = mpreal (1.d0, nwds)
+  call mpdmc (1.d0, 0, t3, mpnw1)
+
+!  t5 = mpreal (1.d10, 4)
+  call mpdmc (1.d10, 0, t5, 4)
+
+  do k = 0, itrmx
+    if (k > 0) then
+!      t2 = 2.d0 * z2 * t2
+      call mpmuld (z2, 2.d0, t6, mpnw1)
+      call mpmul (t6, t2, t7, mpnw1)
+      call mpeq (t7, t2, mpnw1)
+
+!      t3 = (2.d0 * k + 1.d0) * t3
+      call mpmuld (t3, 2.d0 * k + 1.d0, t6, mpnw1)
+      call mpeq (t6, t3, mpnw1)
+    endif
+
+!    t4 = t2 / t3
+    call mpdiv (t2, t3, t4, mpnw1)
+
+!    t1 = t1 + t4
+    call mpadd (t1, t4, t6, mpnw1)
+    call mpeq (t6, t1, mpnw1)
+        
+!    t6 = abs (mpreal (t4, 4) / mpreal (t1, 4))
+    call mpdiv (t4, t1, t6, 4)
+
+!    if (t6 < eps .or. t6 >= t5) goto 120
+    call mpcpr (t6, eps, ic1, 4)
+    call mpcpr (t6, t5, ic2, 4)
+    if (ic1 <= 0 .or. ic2 >= 0) goto 120
+
+!    t5 = t6
+    call mpeq (t6, t5, 4)
+  enddo
+  
+write (6, 3) 1, itrmx
+3 format ('*** MPERFR: iteration limit exceeded',2i10)
+call mpabrt (101)
+
+120 continue
+
+!  terf = 2.d0 * t1 / (sqrt (mppi (nwds)) * exp (z2))
+  call mpmuld (t1, 2.d0, t3, mpnw1)
+  call mpsqrt (mppicon, t4, mpnw1)
+  call mpexp (z2, t5, mpnw1)
+  call mpmul (t4, t5, t6, mpnw1)
+  call mpdiv (t3, t6, t7, mpnw1)
+  call mpeq (t7, terf, mpnw)
+else
+
+!  eps = mpreal (2.d0, nwds) ** (-nbt)
+  call mpdmc (1.d0, -nbt, eps, mpnw1)
+
+!  z2 = z ** 2
+  call mpmul (z, z, z2, mpnw1)
+
+!  t1 = mpreal (0.d0, nwds)
+  call mpdmc (0.d0, 0, t1, mpnw1)
+
+!  t2 = mpreal (1.d0, nwds)
+  call mpdmc (1.d0, 0, t2, mpnw1)
+
+!  t3 = abs (z)
+  call mpeq (z, t3, mpnw1)
+  t3(2) = abs (t3(2))
+
+!  t5 = mpreal (1.d10, 4)
+  call mpdmc (1.d10, 0, t5, 4)
+    
+  do k = 0, itrmx
+    if (k > 0) then
+!      t2 = - (2.d0 * k - 1.d0) * t2 / 2.d0
+      call mpmuld (t2, -(2.d0 * k - 1.d0), t6, mpnw1)
+      call mpeq (t6, t2, mpnw1)
+
+!      t3 = z2 * t3
+      call mpmul (t2, t3, t6, mpnw1)
+      call mpeq (t6, t3, mpnw1)
+    endif
+
+!    t4 = t2 / t3
+    call mpdiv (t2, t3, t4, mpnw1)
+
+!    t1 = t1 + t4
+    call mpadd (t1, t4, t6, mpnw1)
+    call mpeq (t6, t1, mpnw1)
+    
+!    t6 = abs (mpreal (t4, 4) / mpreal (t1, 4))
+    call mpdiv (t4, t1, t6, 4)
+
+!    if (t6 < eps .or. t6 >= t5) goto 130
+    call mpcpr (t6, eps, ic1, 4)
+    call mpcpr (t6, t5, ic2, 4)
+    if (ic1 <= 0 .or. ic2 >= 0) goto 130
+
+!    t5 = t6
+    call mpeq (t6, t5, 4)
+  enddo
+
+write (6, 3) 2, itrmx
+call mpabrt (101)
+
+130 continue
+
+!  terf = 1.d0 - t1 / (sqrt (mppi (nwds)) * exp (z2))
+  call mpdmc (1.d0, 0, t2, mpnw1)
+  call mpsqrt (mppicon, t3, mpnw1)
+  call mpexp (z2, t4, mpnw1)
+  call mpmul (t3, t4, t5, mpnw1)
+  call mpdiv (t1, t5, t6, mpnw1)
+  call mpsub (t2, t6, t7, mpnw1)
+  call mpeq (t7, terf, mpnw)
+
+!  if (z < 0.d0) terf = - terf
+  if (z(2) < 0.d0) terf(2) = - terf(2)
+endif
+
+return
+end subroutine mperfr
+
+subroutine mperfcr (z, terfc, mpnw)
+
+!   This evaluates the erfc function, using a combination of two series.
+!   In particular, the algorithm is (where B = (mpnw + 1) * mpnbt, and
+!   dcon is a constant defined below):
+
+!   if (t == 0) then
+!     erfc = 1
+!   elseif (z > sqrt(B*log(2))) then
+!     erfc = 0
+!   elseif (z < -sqrt(B*log(2))) then
+!     erfc = 2
+!   elseif (abs(z) < B/dcon + 8) then
+!     erfc = 1 - 2 / (sqrt(pi)*exp(z^2)) * Sum_{k>=0} 2^k * z^(2*k+1) 
+!               / (1.3....(2*k+1))
+!   else
+!     erfc = 1 / (sqrt(pi)*exp(z^2)) 
+!             * Sum_{k>=0} (-1)^k * (1.3...(2*k-1)) / (2^k * z^(2*k+1))
+!   endif
+
+implicit none
+integer i, ic1, ic2, ic3, itrmx, j, k, mpnw, mpnw1, nbt, neps
+real (mprknd) dcon, d1, d2, d3
+parameter (dcon = 100.d0, itrmx = 100000)
+real (mprknd) eps(0:mpnw+6), terfc(0:), &
+  t1(0:mpnw+6), t2(0:mpnw+6), t3(0:mpnw+6), t4(0:mpnw+6), &
+  t5(0:mpnw+6), t6(0:mpnw+6), t7(0:mpnw+6), z(0:), z2(0:mpnw+6)
+
+! End of declaration
+
+if (mpnw < 4 .or. z(0) < mpnw + 4 .or. z(0) < abs (terfc(2)) + 4 .or. &
+  terfc(0) < mpnw + 6) then
+  write (mpldb, 1)
+1 format ('*** MPERFR: uninitialized or inadequately sized arrays')
+  call mpabrt (99)
+endif
+
+mpnw1 = mpnw + 1
+eps(0) = mpnw1 + 7
+t1(0) = mpnw1 + 7
+t2(0) = mpnw1 + 7
+t3(0) = mpnw1 + 7
+t4(0) = mpnw1 + 7
+t5(0) = mpnw1 + 7
+t6(0) = mpnw1 + 7
+t7(0) = mpnw1 + 7
+z2(0) = mpnw1 + 7
+
+nbt = mpnw * mpnbt
+d1 = aint (1.d0 + sqrt (nbt * log (2.d0)))
+d2 = aint (nbt / dcon + 8.d0)
+call mpdmc (d1, 0, t1, mpnw1)
+call mpdmc (d2, 0, t2, mpnw1)
+call mpcpr (z, t1, ic1, mpnw1)
+t1(2) = - t1(2)
+call mpcpr (z, t1, ic2, mpnw1)
+call mpcpr (z, t2, ic3, mpnw1)
+
+!if (z == 0.d0) then
+if (z(2) == 0.d0) then
+
+!  terfc = mpreal (1.d0, nwds)
+  call mpdmc (1.d0, 0, terfc, mpnw)
+
+!elseif (z > d2) then
+elseif (ic1 > 0) then
+
+!  terfc = mpreal (0.d0, nwds)
+  call mpdmc (0.d0, 0, terfc, mpnw)
+
+!elseif (z < -d2) then
+elseif (ic2 < 0) then
+
+!  terfc = mpreal (2.d0, nwds)
+  call mpdmc (2.d0, 0, terfc, mpnw)
+
+!elseif (abs (z) < d3) then
+elseif (ic3 < 0) then
+
+!  eps = mpreal (2.d0, nwds) ** (-nbt)
+  call mpdmc (1.d0, -nbt, eps, mpnw1)
+
+!  z2 = z**2
+  call mpmul (z, z, z2, mpnw1)
+
+!  t1 = mpreal (0.d0, nwds)
+  call mpdmc (0.d0, 0, t1, mpnw1)
+
+!  t2 = z
+  call mpeq (z, t2, mpnw1)
+
+!  t3 = mpreal (1.d0, nwds)
+  call mpdmc (1.d0, 0, t3, mpnw1)
+
+!  t5 = mpreal (1.d10, 4)
+  call mpdmc (1.d10, 0, t5, 4)
+
+  do k = 0, itrmx
+    if (k > 0) then
+!      t2 = 2.d0 * z2 * t2
+      call mpmuld (z2, 2.d0, t6, mpnw1)
+      call mpmul (t6, t2, t7, mpnw1)
+      call mpeq (t7, t2, mpnw1)
+
+!      t3 = (2.d0 * k + 1.d0) * t3
+      call mpmuld (t3, 2.d0 * k + 1.d0, t6, mpnw1)
+      call mpeq (t6, t3, mpnw1)
+    endif
+
+!    t4 = t2 / t3
+    call mpdiv (t2, t3, t4, mpnw1)
+
+!    t1 = t1 + t4
+    call mpadd (t1, t4, t6, mpnw1)
+    call mpeq (t6, t1, mpnw1)
+        
+!    t6 = abs (mpreal (t4, 4) / mpreal (t1, 4))
+    call mpdiv (t4, t1, t6, 4)
+
+!    if (t6 < eps .or. t6 >= t5) goto 120
+    call mpcpr (t6, eps, ic1, 4)
+    call mpcpr (t6, t5, ic2, 4)
+    if (ic1 <= 0 .or. ic2 >= 0) goto 120
+
+!    t5 = t6
+    call mpeq (t6, t5, 4)
+  enddo
+  
+write (6, 3) 1, itrmx
+3 format ('*** MPERFR: iteration limit exceeded',2i10)
+call mpabrt (101)
+
+120 continue
+
+!  terfc = 1.d0 - 2.d0 * t1 / (sqrt (mppi (nwds)) * exp (z2))
+  call mpdmc (1.d0, 0, t2, mpnw1)
+  call mpmuld (t1, 2.d0, t3, mpnw1)
+  call mpsqrt (mppicon, t4, mpnw1)
+  call mpexp (z2, t5, mpnw1)
+  call mpmul (t4, t5, t6, mpnw1)
+  call mpdiv (t3, t6, t7, mpnw1)
+  call mpsub (t2, t7, t6, mpnw1)
+  call mpeq (t6, terfc, mpnw)
+else
+
+!  eps = mpreal (2.d0, nwds) ** (-nbt)
+  call mpdmc (1.d0, -nbt, eps, mpnw1)
+
+!  z2 = z ** 2
+  call mpmul (z, z, z2, mpnw1)
+
+!  t1 = mpreal (0.d0, nwds)
+  call mpdmc (0.d0, 0, t1, mpnw1)
+
+!  t2 = mpreal (1.d0, nwds)
+  call mpdmc (1.d0, 0, t2, mpnw1)
+
+!  t3 = abs (z)
+  call mpeq (z, t3, mpnw1)
+  t3(2) = abs (t3(2))
+
+!  t5 = mpreal (1.d10, 4)
+  call mpdmc (1.d10, 0, t5, 4)
+    
+  do k = 0, itrmx
+    if (k > 0) then
+!      t2 = - (2.d0 * k - 1.d0) * t2 / 2.d0
+      call mpmuld (t2, -(2.d0 * k - 1.d0), t6, mpnw1)
+      call mpeq (t6, t2, mpnw1)
+
+!      t3 = z2 * t3
+      call mpmul (t2, t3, t6, mpnw1)
+      call mpeq (t6, t3, mpnw1)
+    endif
+
+!    t4 = t2 / t3
+    call mpdiv (t2, t3, t4, mpnw1)
+
+!    t1 = t1 + t4
+    call mpadd (t1, t4, t6, mpnw1)
+    call mpeq (t6, t1, mpnw1)
+    
+!    t6 = abs (mpreal (t4, 4) / mpreal (t1, 4))
+    call mpdiv (t4, t1, t6, 4)
+
+!    if (t6 < eps .or. t6 >= t5) goto 130
+    call mpcpr (t6, eps, ic1, 4)
+    call mpcpr (t6, t5, ic2, 4)
+    if (ic1 <= 0 .or. ic2 >= 0) goto 130
+
+!    t5 = t6
+    call mpeq (t6, t5, 4)
+  enddo
+
+write (6, 3) 2, itrmx
+call mpabrt (101)
+
+130 continue
+
+!  terfc = t1 / (sqrt (mppi (nwds)) * exp (z2))
+  call mpsqrt (mppicon, t3, mpnw1)
+  call mpexp (z2, t4, mpnw1)
+  call mpmul (t3, t4, t5, mpnw1)
+  call mpdiv (t1, t5, t6, mpnw1)
+
+!  if (z < 0.d0) terfc = 2.d0 - terfc
+  if (z(2) < 0.d0) then
+    call mpdmc (2.d0, 0, t2, mpnw1)
+    call mpsub (t2, t6, t7, mpnw1)
+    call mpeq (t7, t6, mpnw1)
+  endif
+
+  call mpeq (t6, terfc, mpnw)
+endif
+
+return
+end subroutine mperfcr
+
 subroutine mpgammar (t, z, mpnw)
 
 !   This evaluates the gamma function, using an algorithm of R. W. Potter.
@@ -265,9 +713,9 @@ subroutine mpgammar (t, z, mpnw)
 
 implicit none
 integer i, itrmx, j, k, mpnw, mpnw1, ndp, neps, nt, n1, n2, n3
-double precision alpha, al2, dmax, d1, d2, d3
+real (mprknd) alpha, al2, dmax, d1, d2, d3
 parameter (al2 = 0.69314718055994530942d0, dmax = 1d8, itrmx = 100000)
-double precision t(0:mpnw+5), z(0:mpnw+5), f1(0:8), sum1(0:mpnw+6), &
+real (mprknd) t(0:), z(0:), f1(0:8), sum1(0:mpnw+6), &
   sum2(0:mpnw+6), tn(0:mpnw+6), t1(0:mpnw+6), t2(0:mpnw+6), t3(0:mpnw+6), &
   t4(0:mpnw+6), t5(0:mpnw+6), t6(0:mpnw+6)
 
@@ -388,8 +836,8 @@ do j = 1, itrmx
 enddo
 
 write (6, 3) 1, itrmx
-3 format ('*** MPGAMMAR: iteration limit execeeded',2i10)
-call mpabrt (67)
+3 format ('*** MPGAMMAR: iteration limit exceeded',2i10)
+call mpabrt (101)
 
 100 continue
 
@@ -454,11 +902,11 @@ subroutine mpincgammar (s, z, g, mpnw)
 
 implicit none
 integer i, itrmax, k, mpnw, mpnw1, n
-double precision dmax
+real (mprknd) dmax
 parameter (dmax = 40.d0, itrmax = 1000000)
-double precision g(0:mpnw+5), s(0:mpnw+5), t0(0:mpnw+6), t1(0:mpnw+6), &
+real (mprknd) g(0:), s(0:), t0(0:mpnw+6), t1(0:mpnw+6), &
   t2(0:mpnw+6), t3(0:mpnw+6), t4(0:mpnw+6), t5(0:mpnw+6), t6(0:mpnw+6), &
-  z(0:mpnw+5), f1(0:8)
+  z(0:), f1(0:8)
 
 ! End of declaration
 
@@ -596,12 +1044,12 @@ subroutine mpzetar (ss, zz, mpnw)
 
 implicit none
 integer i, is, itrmax, j, mpnw, mpnw1, n, nwds
-double precision dfrac, dlogb, d1
+real (mprknd) dfrac, dlogb, d1
 parameter (itrmax = 1000000, dfrac = 16.d0, dlogb = 33.27106466687737d0)
-double precision s(0:mpnw+6), ss(0:mpnw+5), zz(0:mpnw+5), &
+real (mprknd) s(0:mpnw+6), ss(0:), zz(0:), &
   t1(0:mpnw+6), t2(0:mpnw+6), t3(0:mpnw+6), t4(0:mpnw+6), t5(0:mpnw+6), &
   tn(0:mpnw+6), tt(0:mpnw+6), f1(0:8)
-double precision sgn
+real (mprknd) sgn
 
 !  End of declaration
 
@@ -660,6 +1108,7 @@ if (ss(2) < 0.d0) then
     t1(2) = 0.d0
     t1(3) = 0.d0
     t1(4) = 0.d0
+    t1(5) = 0.d0
     goto 200
   endif
 
@@ -827,13 +1276,13 @@ subroutine mpzetaemr (nb1, nb2, berne, s, z, mpnw)
 !  Bernoulli numbers.  Its dimensions must be as shown below. 
 
 implicit none
-integer i, is, itrmax, k, mpnw, mpnw1, nb1, nb2, nn, n1, n2
-double precision dfrac, dlogb, d1, d2
+integer i, ia, is, itrmax, k, mpnw, mpnw1, na, nb1, nb2, nn, n1, n2
+real (mprknd) dfrac, dlogb, d1, d2
 parameter (itrmax = 1000000, dfrac = 8.5d0, dlogb = 33.27106466687737d0)
-double precision s(0:mpnw+5), z(0:mpnw+5), t0(0:mpnw+6), t1(0:mpnw+6), &
+real (mprknd) s(0:), z(0:), t0(0:mpnw+6), t1(0:mpnw+6), &
   t2(0:mpnw+6), t3(0:mpnw+6), t4(0:mpnw+6), t5(0:mpnw+6), t6(0:mpnw+6), &
   t7(0:mpnw+6), t8(0:mpnw+6), t9(0:mpnw+6), tt(0:mpnw+6), f1(0:8)
-double precision berne(0:nb1+5,nb2)
+real (mprknd) berne(0:nb1+5,nb2)
 
 ! End of declaration
 
@@ -908,6 +1357,7 @@ if (s(2) < 0.d0) then
     t1(2) = 0.d0
     t1(3) = 0.d0
     t1(4) = 0.d0
+    t1(5) = 0.d0
     goto 200
   endif
 
@@ -1033,7 +1483,24 @@ do k = 2, min (nb2, itrmax)
   
 !  t7 = t3 * berne(k) / (dble (2 * k) * t5)
 
-  call mpmul (t3, berne(0,k), t4, mpnw1)
+!   The next few lines (to !+) are necessary, rather than a simple call
+!   to mpmul, to avoid a Fortran rank-mismatch error.
+
+!   call mpmul (t3, berne(0,k), t4, mpnw1)
+
+  ia = sign (1.d0, berne(2,k))
+  na = min (int (abs (berne(2,k))), mpnw1)
+  t8(1) = mpnw1
+  t8(2) = sign (na, ia)
+
+  do i = 2, na + 2
+    t8(i+1) = berne(i+1,k)
+  enddo
+
+  t8(na+4) = 0.d0
+  t8(na+5) = 0.d0
+  call mpmul (t3, t8, t4, mpnw1)
+!+
   call mpmuld (t5, dble (2 * k), t6, mpnw1)
   call mpdiv (t4, t6, t7, mpnw1)
 

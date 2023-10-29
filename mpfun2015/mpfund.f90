@@ -3,7 +3,7 @@
 !  MPFUN-Fort: A thread-safe arbitrary precision computation package
 !  Transcendental function module (module MPFUND)
 
-!  Revision date:  6 Feb 2016
+!  Revision date:  14 Jun 2021
 
 !  AUTHOR:
 !     David H. Bailey
@@ -11,7 +11,7 @@
 !     Email: dhbailey@lbl.gov
 
 !  COPYRIGHT AND DISCLAIMER:
-!    All software in this package (c) 2015 David H. Bailey.
+!    All software in this package (c) 2021 David H. Bailey.
 !    By downloading or using this software you agree to the copyright, disclaimer
 !    and license agreement in the accompanying file DISCLAIMER.txt.
 
@@ -31,7 +31,7 @@
 
 !  DOCUMENTATION:
 !    A detailed description of this package, and instructions for compiling
-!    and testing this program on various specific systems are included in the
+!    and testing this program on various speciƒfic systems are included in the
 !    README file accompanying this package, and, in more detail, in the
 !    following technical paper:
    
@@ -64,7 +64,7 @@ subroutine mpagmr (a, b, c, mpnw)
 implicit none
 integer i, itrmx, j, mpnw, mpnw1
 parameter (itrmx = 50)
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), c(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6)
 
 if (mpnw < 4 .or. a(0) < mpnw + 4 .or. b(0) < abs (a(2)) + 4 .or. &
@@ -132,10 +132,10 @@ subroutine mpang (x, y, a, mpnw)
 
 implicit none
 integer i, iq, ix, iy, k, kk, mpnw, mpnwx, mpnw1, mq, nit, nx, ny, n1, n2
-double precision cl2, cpi, mprxx, t1, t2, t3
+real (mprknd) cl2, cpi, mprxx, t1, t2, t3
 parameter (cl2 = 1.4426950408889633d0, cpi = 3.141592653589793d0, &
   mprxx = 1d-14, mpnwx = 100, nit = 3)
-double precision a(0:mpnw+5), x(0:mpnw+5), y(0:mpnw+5), s0(0:mpnw+6), &
+real (mprknd) a(0:), x(0:), y(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6), s5(0:mpnw+6)
 
 ! End of declaration
@@ -198,6 +198,8 @@ elseif (ny .eq. 0) then
     a(1) = mpnw
     a(2) = 0.d0
     a(3) = 0.d0
+    a(4) = 0.d0
+    a(5) = 0.d0
   else
     call mpeq (s0, a, mpnw) 
   endif
@@ -293,7 +295,7 @@ subroutine mpangx (x, y, a, mpnw)
 
 implicit none
 integer i, mpnw, mp7
-double precision a(0:mpnw+5), x(0:mpnw+5), y(0:mpnw+5), s0(0:2*mpnw+13), &
+real (mprknd) a(0:), x(0:), y(0:), s0(0:2*mpnw+13), &
   s1(0:2*mpnw+13)
 
 ! End of declaration
@@ -311,9 +313,9 @@ s0(mp7) = mp7
 s1(0) = mp7
 s1(mp7) = mp7
 call mpeq (x, s0, mpnw)
-call mpeq (y, s0(mp7), mpnw)
+call mpeq (y, s0(mp7:), mpnw)
 call mpclogx (s0, s1, mpnw)
-call mpeq (s1(mp7), a, mpnw)
+call mpeq (s1(mp7:), a, mpnw)
 
 return
 end subroutine mpangx
@@ -333,7 +335,7 @@ subroutine mpcagm (a, b, c, mpnw)
 implicit none
 integer i, itrmx, j, la, lb, lc, mp7, mpnw, mpnw1
 parameter (itrmx = 50)
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), c(0:2*mpnw+11), &
+real (mprknd) a(0:), b(0:), c(0:), &
   s0(0:2*mpnw+13), s1(0:2*mpnw+13), s2(0:2*mpnw+13), s3(0:2*mpnw+13)
 
 la = a(0)
@@ -363,7 +365,7 @@ call mpceq (b, s2, mpnw1)
 do j = 1, itrmx
   call mpcadd (s1, s2, s0, mpnw1)
   call mpmuld (s0, 0.5d0, s3, mpnw1)
-  call mpmuld (s0(mp7), 0.5d0, s3(mp7), mpnw1) 
+  call mpmuld (s0(mp7:), 0.5d0, s3(mp7:), mpnw1) 
   call mpcmul (s1, s2, s0, mpnw1) 
   call mpcsqrt (s0, s2, mpnw1)
   call mpceq (s3, s1, mpnw1)
@@ -382,7 +384,7 @@ call mpabrt (5)
 100 continue
 
 call mproun (s1, mpnw)
-call mproun (s1(mp7), mpnw)
+call mproun (s1(mp7:), mpnw)
 call mpceq (s1, c, mpnw)
 
 return
@@ -401,7 +403,7 @@ subroutine mpcexp (a, b, mpnw)
 implicit none
 integer la, lb, mpnw, mpnwx, mpnw1
 parameter (mpnwx = 300)
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
 
 ! End of declaration
@@ -430,14 +432,14 @@ s3(0) = mpnw + 7
 s4(0) = mpnw + 7
 
 call mpexp (a, s0, mpnw1)
-call mpcssnr (a(la), s1, s2, mpnw1)
+call mpcssnr (a(la:), s1, s2, mpnw1)
 call mpmul (s0, s1, s3, mpnw1)
 call mpmul (s0, s2, s4, mpnw1)
 
 call mproun (s3, mpnw)
 call mproun (s4, mpnw)
 call mpeq (s3, b, mpnw)
-call mpeq (s4, b(lb), mpnw)
+call mpeq (s4, b(lb:), mpnw)
 
 100 continue
 
@@ -459,9 +461,9 @@ subroutine mpcexpx (a, b, mpnw)
 
 implicit none
 integer i, ia, iq, k, la, lb, mpnw, mpnw1, mp7, mq, na, nb, nit, n0, n1, n2
-double precision cl2, t0, t1, t2, mprxx
+real (mprknd) cl2, t0, t1, t2, mprxx
 parameter (cl2 = 1.4426950408889633d0, nit = 3, mprxx = 1d-14)
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), s0(0:2*mpnw+13), &
+real (mprknd) a(0:), b(0:), s0(0:2*mpnw+13), &
   s1(0:2*mpnw+13), s2(0:2*mpnw+13), s3(0:2*mpnw+13), s4(0:2*mpnw+13), &
   r1(0:mpnw+6), r2(0:mpnw+6)
 
@@ -491,9 +493,13 @@ if (n1 > 30) then
     b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
-    b(nb+1) = mpnw
-    b(nb+2) = 0.d0
-    b(nb+3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
+    b(lb+1) = mpnw
+    b(lb+2) = 0.d0
+    b(lb+3) = 0.d0
+    b(lb+4) = 0.d0
+    b(lb+5) = 0.d0
     goto 130
   endif
 endif
@@ -507,16 +513,20 @@ if (abs (t1) > 1488522236.d0) then
     b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
-    b(nb+1) = mpnw
-    b(nb+2) = 0.d0
-    b(nb+3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
+    b(lb+1) = mpnw
+    b(lb+2) = 0.d0
+    b(lb+3) = 0.d0
+    b(lb+4) = 0.d0
+    b(lb+5) = 0.d0
     goto 130
   endif
 endif
 
 !   Check if imaginary part is too large to compute meaningful cos/sin values.
 
-call mpmdc (a(la), t1, n1, mpnw)
+call mpmdc (a(la:), t1, n1, mpnw)
 if (n1 >= mpnbt * (mpnw - 1)) then
   write (mpldb, 3)
 3 format ('*** MPCEXPX: imaginary part is too large to compute cos or sin.')
@@ -551,16 +561,16 @@ endif
 
 call mpeq (a, s4, mpnw1)
 call mpmuld (mppicon, 2.d0, s0, mpnw1)
-call mpdiv (a(la), s0, s1, mpnw1)
+call mpdiv (a(la:), s0, s1, mpnw1)
 call mpnint (s1, s2, mpnw1)
 call mpmul (s2, s0, s1, mpnw1)
-call mpsub (a(la), s1, s4(mp7), mpnw1)
+call mpsub (a(la:), s1, s4(mp7:), mpnw1)
 
 !   Check if imaginary part is -pi; if so correct to +pi.
 
-call mpadd (s4(mp7), mppicon, s2, mpnw1)
+call mpadd (s4(mp7:), mppicon, s2, mpnw1)
 if (s2(2) <= 0.d0 .or. s2(3) < - mpnw) then
-  call mpeq (mppicon, s4(mp7), mpnw1)
+  call mpeq (mppicon, s4(mp7:), mpnw1)
 endif
 
 !   Determine the least integer MQ such that 2 ^ MQ .GE. MPNW.
@@ -584,16 +594,16 @@ n0 = min (max (n0, -100), 0)
 t0 = 2.d0 ** (t0 * 2.d0**n0)
 call mpdmc (t0, n1, s0, mpnw1)
 
-call mpmdc (s4(mp7), t0, n0, mpnw1)
+call mpmdc (s4(mp7:), t0, n0, mpnw1)
 t0 = t0 * 2.d0 ** n0
 t1 = cos (t0)
 t2 = sin (t0)
 if (abs (t1) < 1d-14) t1 = 0.d0
 if (abs (t2) < 1d-14) t2 = 0.d0
 call mpdmc (t1, 0, s1, mpnw1)
-call mpdmc (t2, 0, s1(mp7), mpnw1)
+call mpdmc (t2, 0, s1(mp7:), mpnw1)
 call mpmul (s0, s1, s3, mpnw1)
-call mpmul (s0, s1(mp7), s3(mp7), mpnw1)
+call mpmul (s0, s1(mp7:), s3(mp7:), mpnw1)
 iq = 0
 
 !   Perform the Newton-Raphson iteration described above with a dynamically
@@ -609,14 +619,14 @@ do k = 0, mq
 !   Check if we need to add or subtract 2*pi to the output of imaginary part,
 !   in order to remain consistent with previous iterations.
 
-  call mpsub (s4(mp7), s0(mp7), r1, 4)
+  call mpsub (s4(mp7:), s0(mp7:), r1, 4)
   if (r1(2) /= 0.d0 .and. r1(3) >= -1.d0) then
     if (r1(2) > 0.d0) then
-      call mpadd (s0(mp7), mppicon, r1, mpnw1)
-      call mpadd (r1, mppicon, s0(mp7), mpnw1) 
+      call mpadd (s0(mp7:), mppicon, r1, mpnw1)
+      call mpadd (r1, mppicon, s0(mp7:), mpnw1) 
     else
-      call mpsub (s0(mp7), mppicon, r1, mpnw1)
-      call mpsub (r1, mppicon, s0(mp7), mpnw1) 
+      call mpsub (s0(mp7:), mppicon, r1, mpnw1)
+      call mpsub (r1, mppicon, s0(mp7:), mpnw1) 
     endif
   endif 
 
@@ -633,7 +643,7 @@ enddo
 !   Restore original precision level.
 
 call mproun (s1, mpnw)
-call mproun (s1(mp7), mpnw)
+call mproun (s1(mp7:), mpnw)
 call mpceq (s1, b, mpnw)
 
 130 continue
@@ -655,7 +665,7 @@ subroutine mpclog (a, b, mpnw)
 implicit none
 integer la, lb, mpnw, mpnwx, mpnw1
 parameter (mpnwx = 30)
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
 
 ! End of declaration
@@ -684,16 +694,16 @@ s3(0) = mpnw + 7
 s4(0) = mpnw + 7
 
 call mpmul (a, a, s0, mpnw1)
-call mpmul (a(la), a(la), s1, mpnw1)
+call mpmul (a(la:), a(la:), s1, mpnw1)
 call mpadd (s0, s1, s2, mpnw1)
 call mplog (s2, s3, mpnw1)
 call mpmuld (s3, 0.5d0, s0, mpnw1)
-call mpang (a, a(la), s1, mpnw1)
+call mpang (a, a(la:), s1, mpnw1)
 
 call mproun (s0, mpnw)
 call mproun (s1, mpnw)
 call mpeq (s0, b, mpnw)
-call mpeq (s1, b(lb), mpnw)
+call mpeq (s1, b(lb:), mpnw)
 
 100 continue
 
@@ -718,9 +728,9 @@ subroutine mpclogx (a, b, mpnw)
 implicit none
 integer i, ia1, ia2, is, itrmax, i1, i2, la, lb, k, mpnw, mpnw1, mp7, &
   na1, na2, n1, n2
-double precision st, rtol, tol, t1, t2, tn
+real (mprknd) st, rtol, tol, t1, t2, tn
 parameter (itrmax = 1000000, rtol = 0.5d0**7)
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), f1(0:18), f4(0:18), &
+real (mprknd) a(0:), b(0:), f1(0:18), f4(0:18), &
   s0(0:2*mpnw+13), s1(0:2*mpnw+13), s2(0:2*mpnw+13), s3(0:2*mpnw+13), &
   s4(0:2*mpnw+13)
   
@@ -754,10 +764,12 @@ if (a(2) == 1.d0 .and. a(3) == 0.d0 .and. a(4) == 1.d0 .and. &
   b(2) = 0.d0
   b(3) = 0.d0
   b(4) = 0.d0
+  b(5) = 0.d0
   b(lb+1) = mpnw
   b(lb+2) = 0.d0
   b(lb+3) = 0.d0
   b(lb+4) = 0.d0
+  b(lb+5) = 0.d0
   goto 120
 endif
 
@@ -833,7 +845,7 @@ if ((s0(2) == 0.d0 .or. s0(3) <= min (-2.d0, - rtol * mpnw1)) .and. &
     call mpcmul (s1, s2, s3, mpnw1) 
     call mpceq (s3, s2, mpnw1) 
     call mpdivd (s3, st, s4, mpnw1) 
-    call mpdivd (s3(mp7), st, s4(mp7), mpnw1)
+    call mpdivd (s3(mp7:), st, s4(mp7:), mpnw1)
     call mpcadd (s0, s4, s3, mpnw1) 
     call mpceq (s3, s0, mpnw1) 
     if ((s4(2) == 0.d0 .or. s4(3) < tol) .and. &
@@ -852,7 +864,7 @@ n2 = mpnbt * (mpnw1 / 2 + 2) - n1
 tn = n2
 call mpdmc (1.d0, n2, s1, mpnw1)
 call mpmul (a, s1, s0, mpnw1)
-call mpmul (a(la), s1, s0(mp7), mpnw1)
+call mpmul (a(la:), s1, s0(mp7:), mpnw1)
 
 !   Perform AGM iterations.
 
@@ -863,9 +875,9 @@ call mpcagm (s1, s2, s3, mpnw1)
 !   Compute Pi / (2 * A), where A is the limit of the AGM iterations.
 
 call mpmuld (s3, 2.d0, s0, mpnw1)
-call mpmuld (s3(mp7), 2.d0, s0(mp7), mpnw1)
+call mpmuld (s3(mp7:), 2.d0, s0(mp7:), mpnw1)
 call mpeq (mppicon, s3, mpnw1)
-call mpdmc (0.d0, 0, s3(mp7), mpnw1)
+call mpdmc (0.d0, 0, s3(mp7:), mpnw1)
 call mpcdiv (s3, s0, s1, mpnw1)
 
 !   Subtract TN * Log(2).
@@ -876,11 +888,11 @@ call mpsub (s1, s2, s0, mpnw1)
 
 !   Check if imaginary part is -pi; if so correct to +pi.
 
-call mpadd (s1(mp7), mppicon, s2, mpnw1)
+call mpadd (s1(mp7:), mppicon, s2, mpnw1)
 if (s2(2) <= 0.d0 .or. s2(3) < - mpnw) then
-  call mpeq (mppicon, s0(mp7), mpnw1)
+  call mpeq (mppicon, s0(mp7:), mpnw1)
 else
-  call mpeq (s1(mp7), s0(mp7), mpnw1)
+  call mpeq (s1(mp7:), s0(mp7:), mpnw1)
 endif
 
 110 continue
@@ -888,7 +900,7 @@ endif
 !  Restore original precision level.
 
 call mproun (s0, mpnw)
-call mproun (s0(mp7), mpnw)
+call mproun (s0(mp7:), mpnw)
 call mpceq (s0, b, mpnw)
 
 120 continue
@@ -902,7 +914,7 @@ subroutine mpcpowcc (a, b, c, mpnw)
 
 implicit none
 integer la, lb, lc, l3, mpnw
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), c(0:2*mpnw+11), &
+real (mprknd) a(0:), b(0:), c(0:), &
   s1(0:2*mpnw+11), s2(0:2*mpnw+11)
 
 ! End of declaration
@@ -936,7 +948,7 @@ subroutine mpcpowcr (a, b, c, mpnw)
 
 implicit none
 integer la, lb, lc, l3, mpnw
-double precision a(0:2*mpnw+11), b(0:mpnw+5), c(0:2*mpnw+11), &
+real (mprknd) a(0:), b(0:), c(0:), &
   s1(0:2*mpnw+11), s2(0:2*mpnw+11)
 
 ! End of declaration
@@ -959,7 +971,7 @@ s2(0) = l3
 s2(l3) = l3
 call mpclog (a, s1, mpnw)
 call mpmul (b, s1, s2, mpnw)
-call mpmul (b, s1(l3), s2(l3), mpnw)
+call mpmul (b, s1(l3:), s2(l3:), mpnw)
 call mpcexp (s2, c, mpnw)
 
 return
@@ -971,7 +983,7 @@ subroutine mpcpowrc (a, b, c, mpnw)
 
 implicit none
 integer la, lb, lc, l3, mpnw
-double precision a(0:mpnw+5), b(0:2*mpnw+11), c(0:2*mpnw+11), &
+real (mprknd) a(0:), b(0:), c(0:), &
   s1(0:2*mpnw+11), s2(0:2*mpnw+11)
 
 ! End of declaration
@@ -993,7 +1005,7 @@ s2(0) = l3
 s2(l3) = l3
 call mplog (a, s1, mpnw)
 call mpmul (s1, b, s2, mpnw)
-call mpmul (s1, b(lb), s2(l3), mpnw)
+call mpmul (s1, b(lb:), s2(l3:), mpnw)
 call mpcexp (s2, c, mpnw)
 
 return
@@ -1009,7 +1021,7 @@ subroutine mpcsshr (a, x, y, mpnw)
 implicit none
 integer itrmx, j, mpnw, mpnwx, mpnw1, mpnw2
 parameter (itrmx = 1000000, mpnwx = 700)
-double precision a(0:mpnw+5), f(0:9), x(0:mpnw+5), y(0:mpnw+5), s0(0:mpnw+6), &
+real (mprknd) a(0:), f(0:9), x(0:), y(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), t2
 
 ! End of declaration
@@ -1037,7 +1049,7 @@ f(6) = 0.d0
 !   If argument is very small, compute the sinh using a Taylor series.
 !   This avoids accuracy loss that otherwise occurs by using exp.
 
-if (s0(3) < -1.d0) then
+if (a(3) < -1.d0) then
   call mpeq (a, s0, mpnw1) 
   call mpmul (s0, s0, s2, mpnw1) 
   mpnw2 =  mpnw1
@@ -1101,10 +1113,11 @@ subroutine mpcssnr (a, x, y, mpnw)
 
 !   Sin (s) =  s - s^3 / 3! + s^5 / 5! - s^7 / 7! ...
 
-!   where the argument S has been reduced to the closest quadrant.  To further
-!   accelerate the series, the reduced argument is divided by 2^NQ.  After
-!   convergence of the series, the double-angle formulas for cos and sin are
-!   applied NQ times.  NQ = 2 by default.
+!   where the argument S has been reduced to (-pi, pi).  To further
+!   accelerate the series, the reduced argument is divided by 2^NQ, where NQ
+!   is computed as int (sqrt (0.5d0 * N)), where N is the precision in bits.
+!   After convergence of the series, the double-angle formulas for cos are
+!   applied NQ times.
 
 !   If the precision level MPNW exceeds MPNWX, this subroutine calls
 !   MPCSSNX instead.  By default, mpnwx = 100000 (approx. 1450000 digits).
@@ -1113,8 +1126,8 @@ implicit none
 integer i, ia, is, itrmx, i1, j, k, ka, mpnw, mpnwx, mpnw1, mpnw2, &
   na, ndeg, nq, n1, n2
 parameter (itrmx = 1000000, mpnwx = 100000)
-double precision dpi, t1, t2
-double precision a(0:mpnw+5), f1(0:8), f2(0:8), x(0:mpnw+5), y(0:mpnw+5), &
+real (mprknd) dpi, t1, t2
+real (mprknd) a(0:), f1(0:8), f2(0:8), x(0:), y(0:), &
   s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6), &
   s5(0:mpnw+6), s6(0:mpnw+6)
   
@@ -1141,9 +1154,13 @@ if (na .eq. 0) then
   x(2) = 1.d0
   x(3) = 0.d0
   x(4) = 1.d0
+  x(5) = 0.d0
+  x(6) = 0.d0
   y(1) = mpnw
   y(2) = 0.d0
   y(3) = 0.d0
+  y(4) = 0.d0
+  y(5) = 0.d0
   goto 120
 endif
 
@@ -1197,26 +1214,12 @@ endif
 call mpmuld (mppicon, 2.d0, s0, mpnw1)
 call mpdiv (a, s0, s1, mpnw1)
 call mpnint (s1, s2, mpnw1)
-call mpsub (s1, s2, s3, mpnw1)
-
-!   Determine nearest multiple of Pi / 4.
-
-call mpmdc (s3, t1, n1, mpnw1)
-if (n1 >= - mpnbt) then
-  t1 = t1 * 2.d0 ** n1
-  ka = nint (8.d0 * t1)
-else
-  ka = 0
-endif
-
-t1 = ka / 8.d0
-call mpdmc (t1, 0, s1, mpnw1)
-call mpsub (s3, s1, s2, mpnw1)
-call mpmul (s0, s2, s1, mpnw1)
+call mpmul (s0, s2, s4, mpnw1)
+call mpsub (a, s4, s3, mpnw1)
 
 !   Check if reduced argument is zero.  If so then cos = 1 and sin = 0.
 
-if (s1(2) .eq. 0.d0) then
+if (s3(2) .eq. 0.d0) then
   s0(1) = mpnw1
   s0(2) = 1.d0
   s0(3) = 0.d0
@@ -1226,23 +1229,27 @@ if (s1(2) .eq. 0.d0) then
   s1(1) = mpnw1
   s1(2) = 0.d0
   s1(3) = 0.d0
+  s1(4) = 0.d0
+  s1(5) = 0.d0
   goto 115
 endif
 
 !   Determine nq to scale reduced argument, then divide by 2^nq.
 !   If reduced argument is very close to zero, then nq = 0.
 
-if (s1(3) >= -1.d0) then
-  nq = max (nint (sqrt (0.5d0 * mpnw1 * mpnbt) - 3.d0), 1)
+if (s3(3) >= -1.d0) then
+  nq = int (sqrt (0.5d0 * mpnw1 * mpnbt))
 else
   nq = 0
 endif
-call mpdivd (s1, 2.d0**nq, s0, mpnw1)
+
+! write (6, *) 'nq =', nq
+
+call mpdivd (s3, 2.d0**nq, s0, mpnw1)
 call mpeq (s0, s1, mpnw1)
 
 !   Compute the sin of the reduced argument of s1 using a Taylor series.
 
-call mpeq (s1, s0, mpnw1) 
 call mpmul (s0, s0, s2, mpnw1) 
 mpnw2 =  mpnw1
 is = s0(2)
@@ -1288,7 +1295,7 @@ if (nq > 0) then
     call mpmuld (s5, 2.d0, s0, mpnw1)
   enddo
 
-!   Compute sin of reduced argument.
+!   Compute sin of result and correct sign.
 
   call mpmul (s0, s0, s4, mpnw1)
   call mpsub (f1, s4, s5, mpnw1)
@@ -1296,7 +1303,7 @@ if (nq > 0) then
   if (is < 1) s1(2) = - s1(2)
 else
 
-!   In case nq = 0, just compute cos of reduced argument.
+!   In case nq = 0, compute cos of result.
 
   call mpeq (s0, s1, mpnw1)
   call mpmul (s0, s0, s4, mpnw1)
@@ -1306,58 +1313,12 @@ endif
 
 115 continue
 
-!   This code in effect applies the trigonometric summation identities for
-!   s + a * Pi / 4.
-
-call mpeq (mpsqrt22con, s6, mpnw1)
-
-select case (ka)
-  case (-4, 4)
-    call mpeq (s0, s2, mpnw1)
-    call mpeq (s1, s3, mpnw1)
-    s2(2) = - s2(2)
-    s3(2) = - s3(2)
-  case (-3)
-    call mpsub (s1, s0, s4, mpnw1)
-    call mpadd (s0, s1, s5, mpnw1)
-    s5(2) = - s5(2)
-    call mpmul (s4, s6, s2, mpnw1)
-    call mpmul (s5, s6, s3, mpnw1)
-  case (-2)
-    call mpeq (s1, s2, mpnw1)
-    call mpeq (s0, s3, mpnw1)
-    s3(2) = - s3(2)
-  case (-1)
-    call mpadd (s0, s1, s4, mpnw1)
-    call mpsub (s1, s0, s5, mpnw1)
-    call mpmul (s4, s6, s2, mpnw1)
-    call mpmul (s5, s6, s3, mpnw1)
-  case (0)
-    call mpeq (s0, s2, mpnw1)
-    call mpeq (s1, s3, mpnw1)
-  case (1)
-    call mpsub (s0, s1, s4, mpnw1)
-    call mpadd (s0, s1, s5, mpnw1)
-    call mpmul (s4, s6, s2, mpnw1)
-    call mpmul (s5, s6, s3, mpnw1)
-  case (2)
-    call mpeq (s1, s2, mpnw1)
-    call mpeq (s0, s3, mpnw1)
-    s2(2) = - s2(2)
-  case (3)
-    call mpadd (s0, s1, s4, mpnw1)
-    s4(2) = - s4(2)
-    call mpsub (s0, s1, s5, mpnw1)
-    call mpmul (s4, s6, s2, mpnw1)
-    call mpmul (s5, s6, s3, mpnw1)
-end select
-
 !   Restore original precision level.
 
-call mproun (s2, mpnw) 
-call mproun (s3, mpnw) 
-call mpeq (s2, x, mpnw)
-call mpeq (s3, y, mpnw)
+call mproun (s0, mpnw) 
+call mproun (s1, mpnw) 
+call mpeq (s0, x, mpnw)
+call mpeq (s1, y, mpnw)
 
 120 continue
 
@@ -1374,7 +1335,7 @@ subroutine mpcssnx (a, x, y, mpnw)
 
 implicit none
 integer mp7, mpnw
-double precision a(0:mpnw+5), f(0:8), x(0:mpnw+5), y(0:mpnw+5), &
+real (mprknd) a(0:), f(0:8), x(0:), y(0:), &
   s0(0:2*mpnw+13), s1(0:2*mpnw+13)
   
 ! End of declaration
@@ -1396,13 +1357,150 @@ f(1) = mpnw
 f(2) = 0.d0
 f(3) = 0.d0
 call mpeq (f, s0, mpnw)
-call mpeq (a, s0(mp7), mpnw)
+call mpeq (a, s0(mp7:), mpnw)
 call mpcexpx (s0, s1, mpnw)
 call mpeq (s1, x, mpnw)
-call mpeq (s1(mp7), y, mpnw)
+call mpeq (s1(mp7:), y, mpnw)
 
 return
 end subroutine mpcssnx
+
+subroutine mpegammaq (egamma, mpnw)
+
+!   This computes Euler's gamma to available precision (MPNW mantissa words).
+!   The algorithm is the following, which is an improvement to a scheme due to
+!   Sweeney (see https://www.davidhbailey.com/dhbpapers/const.pdf):
+
+!   Select N such that 1/(2^N * Exp(2^N)) < desired epsilon. Then compute
+!   Gamma = 2^N/Exp(2^N) * (Sum_{m >= 0} 2^(m*N)/(m+1)! * H(m+1)) - N * Log(2),
+!   where H(m) = 1 + 1/2 + ... + 1/m.
+
+implicit none
+integer i, itrmx, mpnw, mpnw1, m, neps, nn
+parameter (itrmx = 1000000)
+real (mprknd) egamma(0:), s0(0:mpnw+6), s1(0:mpnw+6), &
+  s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6), s5(0:mpnw+6), s6(0:mpnw+6), &
+  s7(0:mpnw+6), f(0:8)
+
+! End of declaration.
+
+s0(0) = mpnw + 7
+s1(0) = mpnw + 7
+s2(0) = mpnw + 7
+s3(0) = mpnw + 7
+s4(0) = mpnw + 7
+s5(0) = mpnw + 7
+s6(0) = mpnw + 7
+s7(0) = mpnw + 7
+mpnw1 = mpnw + 1
+
+!   Check if Log(2) has been precomputed.
+
+if (mpnw1 > mplog2con(1)) then
+  write (mpldb, 3) mpnw1
+3 format ('*** MPEGAMMA: Log(2) must be precomputed to precision',i9,' words.'/ &
+  'See documentation for details.')
+  call mpabrt (35)
+endif
+
+!   Compute eps and nn based on precision level.
+
+neps = - mpnw1 - 1
+nn = ceiling (log (dble (mpnw1 * mpnbt + mpnbt) * log (2.d0)) / log (2.d0))
+
+!   Initialize s0 through s4 to 1.
+
+s0(1) = mpnw
+s0(2) = 1.d0
+s0(3) = 0.d0
+s0(4) = 1.d0
+s0(5) = 0.d0
+s0(6) = 0.d0
+
+s1(1) = mpnw
+s1(2) = 1.d0
+s1(3) = 0.d0
+s1(4) = 1.d0
+s1(5) = 0.d0
+s1(6) = 0.d0
+
+s2(1) = mpnw
+s2(2) = 1.d0
+s2(3) = 0.d0
+s2(4) = 1.d0
+s2(5) = 0.d0
+s2(6) = 0.d0
+
+s3(1) = mpnw
+s3(2) = 1.d0
+s3(3) = 0.d0
+s3(4) = 1.d0
+s3(5) = 0.d0
+s3(6) = 0.d0
+
+s4(1) = mpnw
+s4(2) = 1.d0
+s4(3) = 0.d0
+s4(4) = 1.d0
+s4(5) = 0.d0
+s4(6) = 0.d0
+
+s7(1) = mpnw
+s7(2) = 1.d0
+s7(3) = 0.d0
+s7(4) = 2.d0
+s7(5) = 0.d0
+s7(6) = 0.d0
+
+!   Set s7 = 2^nn.
+
+call mpdmc (1.d0, nn, s7, mpnw1)
+
+!  Set f = 1.
+
+f(0) = 9.d0
+f(1) = mpnw1
+f(2) = 1.d0
+f(3) = 0.d0
+f(4) = 1.d0
+f(5) = 0.d0
+f(6) = 0.d0
+
+do m = 1, itrmx
+  call mpmul (s7, s0, s5, mpnw1)
+  call mpeq (s5, s0, mpnw1)
+  call mpdmc (dble (m + 1), 0, s5, mpnw1)
+  call mpdiv (f, s5, s6, mpnw1)
+  call mpadd (s1, s6, s5, mpnw1)
+  call mpeq (s5, s1, mpnw1)
+  call mpmuld (s2, m + 1.d0, s5, mpnw1)
+  call mpeq (s5, s2, mpnw1)
+  call mpmul (s0, s1, s5, mpnw1)
+  call mpdiv (s5, s2, s3, mpnw1)
+  call mpadd (s3, s4, s5, mpnw1)
+  call mpeq (s5, s4, mpnw1)
+  if (s3(3) - s4(3) < neps) goto 100
+enddo
+
+write (mpldb, 1)
+1   format ('*** MPEGAMMA: Loop end error.')
+    call mpabrt (36)
+
+100 continue
+
+call mpexp (s7, s5, mpnw1)
+call mpdiv (s7, s5, s6, mpnw1)
+call mpmul (s6, s4, s5, mpnw1)
+call mpmuld (mplog2con, dble (nn), s6, mpnw1)
+call mpsub (s5, s6, s0, mpnw1)
+
+!   Restore original precision level.
+
+call mproun (s0, mpnw) 
+call mpeq (s0, egamma, mpnw)
+
+return
+end subroutine mpegammaq
 
 subroutine mpexp (a, b, mpnw)
 
@@ -1424,9 +1522,9 @@ subroutine mpexp (a, b, mpnw)
 
 implicit none
 integer i, ia, itrmx, j, mpnw, mpnwx, mpnw1, mpnw2, na, nq, nz, n1, n2
-double precision t1, t2
+real (mprknd) t1, t2
 parameter (itrmx = 1000000, mpnwx = 700)
-double precision a(0:mpnw+5), b(0:mpnw+5), f(0:8), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), f(0:8), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
    
 ! End of declaration
@@ -1453,6 +1551,8 @@ if (n1 > 30) then
     b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
     goto 130
   endif
 endif
@@ -1466,6 +1566,8 @@ if (abs (t1) > 1488522236.d0) then
     b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
     goto 130
   endif
 endif
@@ -1598,9 +1700,9 @@ subroutine mpexpx (a, b, mpnw)
 
 implicit none
 integer i, ia, iq, k, mpnw, mpnw1, mq, na, nit, n1, n2
-double precision cl2, t1, t2, mprxx
+real (mprknd) cl2, t1, t2, mprxx
 parameter (cl2 = 1.4426950408889633d0, nit = 3, mprxx = 1d-14)
-double precision a(0:mpnw+5), b(0:mpnw+5), s0(0:mpnw+6), s1(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), s0(0:mpnw+6), s1(0:mpnw+6), &
   s2(0:mpnw+6), s3(0:mpnw+6)
   
 ! End of declaration
@@ -1627,6 +1729,8 @@ if (n1 > 30) then
     b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
     goto 130
   endif
 endif
@@ -1640,6 +1744,8 @@ if (abs (t1) > 1488522236.d0) then
     b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
     goto 130
   endif
 endif
@@ -1719,7 +1825,6 @@ subroutine mpinitran (mpnw)
 
 implicit none
 integer mpnw, nwds, nwds6
-real (mprknd) f(0:8)
 
 !   Add three words to mpnw, since many of the routines in this module 
 !   increase the working precision level by one word upon entry.
@@ -1733,20 +1838,9 @@ mplog2con(0) = nwds6
 mplog2con(1) = 0
 mppicon(0) = nwds6
 mppicon(1) = 0
-mpsqrt22con(0) = nwds6
-mpsqrt22con(1) = 0
 
 call mppiq (mppicon, nwds)
 call mplog2q (mppicon, mplog2con, nwds)
-
-f(0) = 9
-f(1) = nwds
-f(2) = 1.d0
-f(3) = -1.d0
-f(4) = 0.5d0 * mpbdx
-f(5) = 0.d0
-f(6) = 0.d0
-call mpsqrt (f, mpsqrt22con, nwds)
 
 return
 end subroutine mpinitran
@@ -1771,10 +1865,10 @@ subroutine mplog (a, b, mpnw)
 
 implicit none
 integer i, ia, iq, is, itrmax, i1, k, mpnw, mpnwx, mpnw1, mq, na, nit, n1
-double precision alt, cl2, rtol, st, tol, t1, t2, mprxx
+real (mprknd) alt, cl2, rtol, st, tol, t1, t2, mprxx
 parameter (alt = 0.693147180559945309d0, cl2 = 1.4426950408889633d0, &
   rtol = 0.5d0**7, itrmax = 1000000, nit = 3, mprxx = 1d-14, mpnwx = 30)
-double precision a(0:mpnw+5), b(0:mpnw+5), f1(0:8), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), f1(0:8), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
 
 ! End of declaration
@@ -1801,6 +1895,8 @@ if (a(2) == 1.d0 .and. a(3) == 0.d0 .and. a(4) == 1.d0) then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 130
 endif
 
@@ -1914,9 +2010,9 @@ subroutine mplogx (a, b, mpnw)
 
 implicit none
 integer i, ia, is, itrmax, i1, i2, k, mpnw, mpnw1, na, n1, n2
-double precision st, rtol, tol, t1, t2, tn
+real (mprknd) st, rtol, tol, t1, t2, tn
 parameter (itrmax = 1000000, rtol = 0.5d0**7)
-double precision a(0:mpnw+5), b(0:mpnw+5), f1(0:8), f4(0:8), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), f1(0:8), f4(0:8), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
     
 ! End of declaration
@@ -1944,6 +2040,7 @@ if (a(2) == 1.d0 .and. a(3) == 0.d0 .and. a(4) == 1.d0) then
   b(2) = 0.d0
   b(3) = 0.d0
   b(4) = 0.d0
+  b(5) = 0.d0
   goto 120
 endif
 
@@ -2060,9 +2157,9 @@ subroutine mplog2q (pi, alog2, mpnw)
 
 implicit none
 integer i, mpnw, mpnw1, n, n1, n48
-double precision cpi, st, t1, t2, tn
+real (mprknd) cpi, st, t1, t2, tn
 parameter (cpi = 3.141592653589793238d0)
-double precision alog2(0:mpnw+5), f1(0:8), f4(0:8), pi(0:mpnw+6), &
+real (mprknd) alog2(0:), f1(0:8), f4(0:8), pi(0:), &
   s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
 
 ! End of declaration
@@ -2181,9 +2278,9 @@ subroutine mppiq (pi, mpnw)
 
 implicit none
 integer i, k, mpnw, mpnw1, mq
-double precision pi(0:mpnw+5), s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6), &
+real (mprknd) pi(0:), s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6), &
   s3(0:mpnw+6), s4(0:mpnw+6), f(0:8)
-double precision cl2, t1
+real (mprknd) cl2, t1
 parameter (cl2 = 1.4426950408889633d0)
 
 ! End of declaration
@@ -2222,7 +2319,7 @@ s0(3) = 0.d0
 s0(4) = 1.d0
 s0(5) = 0.d0
 s0(6) = 0.d0
-f(0) = mpnw + 7
+f(0) = 9.d0
 f(1) = mpnw1
 f(2) = 1.d0
 f(3) = 0.d0
@@ -2275,9 +2372,9 @@ subroutine mppower (a, b, c, mpnw)
 
 implicit none
 integer i, mpnw, mpnw1, n1
-double precision a1, a2, a3, a4, a5, a6, q1, t0, t1, t2, t3, mprxx, mprxx2
+real (mprknd) a1, a2, a3, a4, a5, a6, q1, t0, t1, t2, t3, mprxx, mprxx2
 parameter (mprxx = 1.d-14, mprxx2 = 5.d-10)
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), c(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6)
   
 !  End of declaration
@@ -2387,107 +2484,6 @@ call mpexp (s1, c, mpnw)
 
 return
 end subroutine mppower
-
-
-subroutine mprroot (n, dr0, da, r, mpnw)
-
-!   Finds a single arbitrary-precision real root, beginning at the DP
-!   value dr0, for a degree-N polynomial whose coefficients (beginning
-!   with the zero-power term, are given in the DP vector DA (of length
-!   N+1).  The result is returned in R.
-
-implicit none
-integer i, ic, itrmax, j, k, mpnw, mpnw1, n, nit
-parameter (itrmax = 1000)
-double precision da(0:n), dad(0:n-1), dr0, d1, d2
-double precision eps1(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6), &
-  s3(0:mpnw+6), s4(0:mpnw+6), s5(0:mpnw+6), r(0:mpnw+5)
-  
-!   Compute derivative.                                                               
-
-do i = 0, n - 1           
-  dad(i) = (i + 1) * da(i+1)
-enddo
-
-s1(0) = mpnw + 7
-s2(0) = mpnw + 7
-s3(0) = mpnw + 7
-s4(0) = mpnw + 7
-s5(0) = mpnw + 7
-eps1(0) = mpnw + 7
-mpnw1 = 4 
-call mpdmc (dr0, 0, s1, mpnw1)                                                           
-s2(1) = mpnw1
-s2(2) = 0.d0
-s2(3) = 0.d0
-call mpdmc (dr0, 0, s3, mpnw1)
-call mpcpr (s3, s2, ic, mpnw1)
-if (ic /= 0) then
-  call mpmuld (s1, 2.d0**(-3*mpnbt), eps1, mpnw1)
-else
-  call mpdmc (2.d0, -2*mpnbt, eps1, mpnw1)
-endif
-
-!   Perform Newton iterations.                             
-
-do j = 1, itrmax
-  
-!   Evaluate polynomial at t1.                                                        
-
-  s2(1) = mpnw1
-  s2(2) = 0.d0
-  s2(3) = 0.d0
-
-  do i = n, 0, -1
-    call mpmul (s1, s2, s3, mpnw1)
-    call mpdmc (da(i), 0, s4, mpnw1)
-    call mpadd (s3, s4, s2, mpnw1)
-  enddo
-  
-!   Evaluate polynomial derivative at t1.                                             
-
-  s3(1) = mpnw1
-  s3(2) = 0.d0
-  s3(3) = 0.d0
-
-  do i = n - 1, 0, -1
-    call mpmul (s1, s3, s4, mpnw1)
-    call mpdmc (dad(i), 0, s5, mpnw1)
-    call mpadd (s4, s5, s3, mpnw1)
-  enddo
-  
-  call mpdiv (s2, s3, s5, mpnw1)
-  call mpsub (s1, s5, s4, mpnw1)
-
-  if (mpnw1 == 4) then
-    call mpsub (s1, s4, s5, mpnw1)
-    s5(2) = abs (s5(2))
-    call mpcpr (s5, eps1, ic, mpnw1)
-    if (ic < 0) then
-      mpnw1 = min (2 * mpnw1 - 1, mpnw)
-    endif
-  elseif (mpnw1 < mpnw) then
-    mpnw1 = min (2 * mpnw1 - 1, mpnw)
-  else
-    call mpeq  (s4, s1, mpnw1)
-    goto 100
-  endif
-  call mpeq (s4, s1, mpnw1)
-enddo
-
-write (mpldb, 1) itrmax
-1 format ('***MPRROOT: failed to find real root; iter count =',i6)
-call mpabrt (89)
-
-100 continue
-
-call mproun (s1, mpnw)
-call mpeq (s1, r, mpnw)
-
-110 continue
-
-return
-end subroutine mprroot
 
 end module mpfund
 

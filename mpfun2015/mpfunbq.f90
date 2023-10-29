@@ -1,10 +1,10 @@
 !*****************************************************************************
 
 !  MPFUN-Fort: A thread-safe arbitrary precision computation package
-!  Basic function module (module MPFUNB); includes real*16 support.
+!  Basic function module (module MPFUNB); includes IEEE quad support.
 !  Search for !> for version differences.
 
-!  Revision date:  5 Feb 2016
+!  Revision date:  16 Jun 2021
 
 !  AUTHOR:
 !     David H. Bailey
@@ -12,7 +12,7 @@
 !     Email: dhbailey@lbl.gov
 
 !  COPYRIGHT AND DISCLAIMER:
-!    All software in this package (c) 2015 David H. Bailey.
+!    All software in this package (c) 2021 David H. Bailey.
 !    By downloading or using this software you agree to the copyright, disclaimer
 !    and license agreement in the accompanying file DISCLAIMER.txt.
 
@@ -72,9 +72,9 @@ subroutine mpadd (a, b, c, mpnw)
 !   This routine adds MPR numbers A and B to yield C.
 
 implicit none
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), d(0:mpnw+6), db
 integer i, ia, ib, ic, ish, ixa, ixb, ixd, mpnw, m1, m2, m3, m4, m5, na, nb, &
   nd, nsh
+real (mprknd) a(0:), b(0:), c(0:), d(0:mpnw+6), db
 
 ! End of declaration
 
@@ -103,6 +103,8 @@ if (na == 0) then
     c(i+1) = b(i+1)
   enddo
 
+  c(nb+4) = 0.d0
+  c(nb+5) = 0.d0
   goto 100
 elseif (nb == 0) then
 
@@ -115,6 +117,8 @@ elseif (nb == 0) then
     c(i+1) = a(i+1)
   enddo
 
+  c(na+4) = 0.d0
+  c(na+5) = 0.d0
   goto 100
 endif
 
@@ -219,7 +223,7 @@ subroutine mpcabs (a, b, mpnw)
 
 implicit none
 integer la, lb, mpnw, mpnw1
-double precision a(0:2*mpnw+11), b(0:2*mpnw+5), s0(0:mpnw+6), s1(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), s0(0:mpnw+6), s1(0:mpnw+6), &
   s2(0:mpnw+6)
 
 ! End of declaration
@@ -238,7 +242,7 @@ s0(0) = mpnw + 7
 s1(0) = mpnw + 7
 s2(0) = mpnw + 7
 call mpmul (a, a, s0, mpnw1)
-call mpmul (a(la), a(la), s1, mpnw1)
+call mpmul (a(la:), a(la:), s1, mpnw1)
 call mpadd (s0, s1, s2, mpnw1)
 call mpsqrt (s2, s0, mpnw1)
 call mproun (s0, mpnw)
@@ -253,7 +257,7 @@ subroutine mpcadd (a, b, c, mpnw)
 
 implicit none
 integer la, lb, lc, mpnw
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), c(0:2*mpnw+11)
+real (mprknd) a(0:), b(0:), c(0:)
 
 ! End of declaration
 
@@ -269,7 +273,7 @@ if (mpnw < 4 .or. a(0) < abs (a(2)) + 4 .or. a(la) < abs (a(la+2)) + 4 &
 endif
 
 call mpadd (a, b, c, mpnw)
-call mpadd (a(la), b(lb), c(lc), mpnw)
+call mpadd (a(la:), b(lb:), c(lc:), mpnw)
 return
 end subroutine mpcadd
 
@@ -279,7 +283,7 @@ subroutine mpcdiv (a, b, c, mpnw)
 
 implicit none
 integer la, lb, lc, mpnw, mpnw1
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), c(0:2*mpnw+11), &
+real (mprknd) a(0:), b(0:), c(0:), &
   s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
 
 ! End of declaration
@@ -303,24 +307,22 @@ s3(0) = mpnw + 7
 s4(0) = mpnw + 7
 
 call mpmul (a, b, s0, mpnw1)
-call mpmul (a(la), b(lb), s1, mpnw1)
+call mpmul (a(la:), b(lb:), s1, mpnw1)
 call mpadd (s0, s1, s2, mpnw1)
-call mpmul (a, b(lb), s0, mpnw1)
+call mpmul (a, b(lb:), s0, mpnw1)
 s0(2) = - s0(2)
-call mpmul (a(la), b, s1, mpnw1)
+call mpmul (a(la:), b, s1, mpnw1)
 call mpadd (s0, s1, s3, mpnw1)
 
 call mpmul (b, b, s0, mpnw1)
-call mpmul (b(lb), b(lb), s1, mpnw1)
+call mpmul (b(lb:), b(lb:), s1, mpnw1)
 call mpadd (s0, s1, s4, mpnw1)
 call mpdiv (s2, s4, s0, mpnw1)
 call mpdiv (s3, s4, s1, mpnw1)
-
-
 call mproun (s0, mpnw)
 call mproun (s1, mpnw)
 call mpeq (s0, c, mpnw)
-call mpeq (s1, c(lc), mpnw)
+call mpeq (s1, c(lc:), mpnw)
 
 return
 end subroutine mpcdiv
@@ -331,7 +333,7 @@ subroutine mpceq (a, b, mpnw)
 
 implicit none
 integer i, ia, la, lb, mpnw, na
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11)
+real (mprknd) a(0:), b(0:)
 
 ! End of declaration
 
@@ -350,6 +352,8 @@ if (na == 0)  then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 110
 endif
 b(1) = mpnw
@@ -370,6 +374,8 @@ if (na == 0)  then
   b(lb+1) = mpnw
   b(lb+2) = 0.d0
   b(lb+3) = 0.d0
+  b(lb+4) = 0.d0
+  b(lb+5) = 0.d0
   goto 120
 endif
 b(lb+1) = mpnw
@@ -393,7 +399,7 @@ subroutine mpcmul (a, b, c, mpnw)
 
 implicit none
 integer la, lb, lc, mpnw, mpnw1
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), c(0:2*mpnw+11), &
+real (mprknd) a(0:), b(0:), c(0:), &
   s0(0:mpnw+6), s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6)
 
 ! End of declaration
@@ -416,16 +422,15 @@ s2(0) = mpnw + 7
 s3(0) = mpnw + 7
 
 call mpmul (a, b, s0, mpnw1)
-call mpmul (a(la), b(lb), s1, mpnw1)
+call mpmul (a(la:), b(lb:), s1, mpnw1)
 call mpsub (s0, s1, s2, mpnw1)
-call mpmul (a, b(lb), s0, mpnw1)
-call mpmul (a(la), b, s1, mpnw1)
+call mpmul (a, b(lb:), s0, mpnw1)
+call mpmul (a(la:), b, s1, mpnw1)
 call mpadd (s0, s1, s3, mpnw1)
-
 call mproun (s2, mpnw)
 call mproun (s3, mpnw)
 call mpeq (s2, c, mpnw)
-call mpeq (s3, c(lc), mpnw)
+call mpeq (s3, c(lc:), mpnw)
 
 return
 end subroutine mpcmul
@@ -438,9 +443,9 @@ subroutine mpcnpwr (a, n, b, mpnw)
 
 implicit none
 integer i, j, k, kk, kn, k0, k1, k2, la, lb, lc, mn, mpnw, mpnw1, n, na, nn, nws
-double precision cl2, t1, mprxx
+real (mprknd) cl2, t1, mprxx
 parameter (cl2 = 1.4426950408889633d0, mprxx = 1d-14)
-double precision a(0:mpnw+11), b(0:mpnw+11), s0(0:2*mpnw+13), s1(0:2*mpnw+13), &
+real (mprknd) a(0:), b(0:), s0(0:2*mpnw+13), s1(0:2*mpnw+13), &
   s2(0:2*mpnw+13)
   
 ! End of declaration
@@ -460,6 +465,8 @@ if (na == 0) then
   	b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
     goto 120
   else
     write (mpldb, 2)
@@ -480,7 +487,7 @@ s2(lc) = mpnw + 7
 nn = abs (n)
 if (nn == 0) then
   call mpdmc (1.d0, 0, b, mpnw)
-  call mpdmc (0.d0, 0, b(lb), mpnw)
+  call mpdmc (0.d0, 0, b(lb:), mpnw)
   goto 120
 elseif (nn == 1) then
   call mpceq (a, s2, mpnw1)
@@ -495,6 +502,7 @@ endif
 t1 = nn
 mn = cl2 * log (t1) + 1.d0 + mprxx
 call mpdmc (1.d0, 0, s2, mpnw1)
+call mpdmc (0.d0, 0, s2(lc:), mpnw1)
 call mpceq (a, s0, mpnw1)
 kn = nn
 
@@ -519,7 +527,7 @@ enddo
 
 if (n < 0) then
   call mpdmc (1.d0, 0, s1, mpnw1)
-  call mpdmc (0.d0, 0, s1(lc), mpnw1)
+  call mpdmc (0.d0, 0, s1(lc:), mpnw1)
   call mpcdiv (s1, s2, s0, mpnw1)
   call mpceq (s0, s2, mpnw1)
 endif
@@ -527,7 +535,7 @@ endif
 !   Restore original precision level.
 
 call mproun (s2, mpnw)
-call mproun (s2(lc), mpnw)
+call mproun (s2(lc:), mpnw)
 call mpceq (s2, b, mpnw)
 
 120 continue
@@ -540,7 +548,7 @@ subroutine mpconjg (a, b, mpnw)
 
 implicit none
 integer la, lb, mpnw
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11)
+real (mprknd) a(0:), b(0:)
 
 ! End of declaration
 
@@ -571,7 +579,7 @@ subroutine mpcsqrt (a, b, mpnw)
 
 implicit none
 integer la, lb, mpnw, mpnw1
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6), s4(0:mpnw+6)
 
 ! End of declaration
@@ -593,30 +601,30 @@ s3(0) = mpnw + 7
 s4(0) = mpnw + 7
 
 call mpmul (a, a, s0, mpnw1)
-call mpmul (a(la), a(la), s1, mpnw1)
+call mpmul (a(la:), a(la:), s1, mpnw1)
 call mpadd (s0, s1, s2, mpnw1)
 call mpsqrt (s2, s0, mpnw1)
   
 if (a(2) >= 0.d0) then
   call mpadd (s0, a, s1, mpnw1)
   call mpsqrt (s1, s0, mpnw1) 
-  call mpdiv (a(la), s0, s1, mpnw1)
+  call mpdiv (a(la:), s0, s1, mpnw1)
 else
   call mpsub (s0, a, s2, mpnw1)
   call mpsqrt (s2, s1, mpnw1)  
-  call mpdiv (a(la), s1, s0, mpnw1)
+  call mpdiv (a(la:), s1, s0, mpnw1)
   s0(2) = abs (s0(2))
   s1(2) = sign (s1(2), a(la+2))
 endif
 
-call mpeq (mpsqrt22con, s2, mpnw1)
+call mpdmc (0.5d0, 0, s3, mpnw1)
+call mpsqrt (s3, s2, mpnw1)
 call mpmul (s0, s2, s3, mpnw1)
 call mpmul (s1, s2, s4, mpnw1)
-  
 call mproun (s3, mpnw)
 call mproun (s4, mpnw)
 call mpeq (s3, b, mpnw)
-call mpeq (s4, b(lb), mpnw)
+call mpeq (s4, b(lb:), mpnw)
 
 return
 end subroutine mpcsqrt
@@ -627,7 +635,7 @@ subroutine mpcsub (a, b, c, mpnw)
 
 implicit none
 integer la, lb, lc, mpnw
-double precision a(0:2*mpnw+11), b(0:2*mpnw+11), c(0:2*mpnw+11)
+real (mprknd) a(0:), b(0:), c(0:)
 
 ! End of declaration
 
@@ -643,7 +651,7 @@ if (mpnw < 4 .or. a(0) < abs (a(2)) + 4 .or. a(la) < abs (a(la+2)) + 4 &
 endif
 
 call mpsub (a, b, c, mpnw)
-call mpsub (a(la), b(lb), c(lc), mpnw)
+call mpsub (a(la:), b(lb:), c(lc:), mpnw)
 return
 end subroutine mpcsub
 
@@ -655,8 +663,8 @@ subroutine mpcpr (a, b, ic, mpnw)
 !   result to be "equal".
 
 implicit none
-double precision a(0:mpnw+5), b(0:mpnw+5), s0(0:mpnw+5)
 integer i, ia, ib, ic, ma, mb, mpnw, na, nb
+real (mprknd) a(0:), b(0:), s0(0:mpnw+5)
 
 ! End of declaration
 
@@ -686,8 +694,8 @@ subroutine mpdiv (a, b, c, mpnw)
 implicit none
 integer i, i1, i2, i3, ia, ib, ij, is, j, j3, md, mpnw, mpnwx, na, nb, nc
 parameter (mpnwx = 200)
-double precision a1, a2, b1, b2, c1, c2, dc, rb, ss, t0, t1, t2
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), d(0:mpnw+5)
+real (mprknd) a1, a2, b1, b2, c1, c2, dc, rb, ss, t0, t1, t2
+real (mprknd) a(0:), b(0:), c(0:), d(0:mpnw+5)
 
 ! End of declaration
 
@@ -710,6 +718,7 @@ if (na .eq. 0) then
   c(2) = 0.d0
   c(3) = 0.d0
   c(4) = 0.d0
+  c(5) = 0.d0
   goto 190
 endif
 
@@ -852,9 +861,9 @@ subroutine mpdivd (a, b, c, mpnw)
 
 implicit none
 integer i, ij, is, i1, i2, i3, ia, ib, j, j3, k, md, mpnw, n, na, nb, nc, n1
-double precision a1, a2, b, bb, b1, b2, br, c1, c2, dc, dd, d1, d2, rb, &
+real (mprknd) a1, a2, b, bb, b1, b2, br, c1, c2, dc, dd, d1, d2, rb, &
   t0, t1
-double precision a(0:mpnw+5), c(0:mpnw+5), d(0:mpnw+5)
+real (mprknd) a(0:), c(0:), d(0:mpnw+5)
 
 ! End of declaration
 
@@ -874,6 +883,8 @@ if (na == 0) then
   c(1) = mpnw
   c(2) = 0.d0
   c(3) = 0.d0
+  c(4) = 0.d0
+  c(5) = 0.d0
   goto 190
 endif
 
@@ -1025,7 +1036,7 @@ subroutine mpdivd40 (a, b, c, mpnw)
 
 implicit none
 integer mpnw
-double precision a(0:mpnw+5), b, c(0:mpnw+5), t1, t2
+real (mprknd) a(0:), b, c(0:), t1, t2
 
 ! End of declaration
 
@@ -1046,7 +1057,7 @@ else
   write (mpldb, 2) b
 2 format ('*** MPDIVD40: DP value has more than 40 significant bits:', &
   1p,d25.15/'and thus very likely represents an unintended loss of accuracy.'/ &
-  'Fix the issue, or else use functions mpprodd, mpquotd, mpreald or mpcmplxdc.'/ &
+  'Fix the issue, or else use functions mpprod, mpquot, mpreald or mpcmplxdc.'/ &
   'See documentation for details.')
   call mpabrt (81)
 endif
@@ -1066,7 +1077,7 @@ subroutine mpdmc (a, n, b, mpnw)
 
 implicit none
 integer i, k, mpnw, n, n1, n2
-double precision a, aa, b(0:*)
+real (mprknd) a, aa, b(0:)
 
 ! End of declaration
 
@@ -1082,6 +1093,8 @@ if (a == 0.d0) then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 150
 endif
 n1 = n / mpnbt
@@ -1151,7 +1164,7 @@ subroutine mpdmc40 (a, n, b, mpnw)
 
 implicit none
 integer mpnw, n
-double precision a, b(0:*), t1, t2
+real (mprknd) a, b(0:), t1, t2
 
 ! End of declaration
 
@@ -1172,7 +1185,7 @@ else
   write (mpldb, 2) a
 2 format ('*** MPDMC40: DP value has more than 40 significant bits:', &
   1p,d25.15/'and thus very likely represents an unintended loss of accuracy.'/ &
-  'Fix the issue, or else use functions mpprodd, mpquotd, mpreald or mpcmplxdc.'/ &
+  'Fix the issue, or else use functions mpprod, mpquot, mpreald or mpcmplxdc.'/ &
   'See documentation for details.')
   call mpabrt (82)
 endif
@@ -1186,7 +1199,7 @@ subroutine mpeq (a, b, mpnw)
 
 implicit none
 integer i, ia, mpnw, na
-double precision a(0:mpnw+5), b(0:mpnw+5)
+real (mprknd) a(0:), b(0:)
 
 ! End of declaration
 
@@ -1202,6 +1215,8 @@ if (na == 0)  then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 110
 endif
 b(1) = mpnw
@@ -1229,7 +1244,7 @@ subroutine mpinfr (a, b, c, mpnw)
 
 implicit none
 integer i, ia, ma, mpnw, na, nb, nc
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5)
+real (mprknd) a(0:), b(0:), c(0:)
 
 ! End of declaration
 
@@ -1249,9 +1264,13 @@ if (na == 0)  then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   c(1) = mpnw
   c(2) = 0.d0
   c(3) = 0.d0
+  c(4) = 0.d0
+  c(5) = 0.d0
   goto 120
 endif
 
@@ -1268,6 +1287,8 @@ if (nb == 0) then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
 else
   b(1) = mpnw
   b(2) = sign (nb, ia)
@@ -1287,6 +1308,8 @@ if (nc <= 0) then
   c(1) = mpnw
   c(2) = 0.d0
   c(3) = 0.d0
+  c(4) = 0.d0
+  c(5) = 0.d0
 else
   c(1) = mpnw
   c(2) = sign (nc, ia)
@@ -1314,8 +1337,8 @@ subroutine mpmdc (a, b, n, mpnw)
 
 implicit none
 integer i, mpnw, n, na
-double precision aa, b
-double precision a(0:mpnw+5)
+real (mprknd) aa, b
+real (mprknd) a(0:)
 
 ! End of declaration
 
@@ -1371,8 +1394,8 @@ subroutine mpmul (a, b, c, mpnw)
 implicit none
 integer i, i1, i2, j, j3, ia, ib, mpnw, mpnwx, na, nb, nc, n2
 parameter (mpnwx = 200)
-double precision a1, a2, c1, c2, dc, d1, d2, t1, t2, t3
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), d(0:mpnw+5), &
+real (mprknd) a1, a2, c1, c2, dc, d1, d2, t1, t2, t3
+real (mprknd) a(0:), b(0:), c(0:), d(0:mpnw+5), &
   b1(0:mpnw+5), b2(0:mpnw+5)
 
 ! End of declaration
@@ -1397,6 +1420,8 @@ if (na == 0 .or. nb == 0) then
   c(1) = mpnw
   c(2) = 0.d0
   c(3) = 0.d0
+  c(4) = 0.d0
+  c(5) = 0.d0
   goto 200
 endif
 
@@ -1412,6 +1437,8 @@ if (na == 1 .and. a(4) == 1.d0) then
     c(i+1) = b(i+1)
   enddo
 
+  c(nb+4) = 0.d0
+  c(nb+5) = 0.d0
   goto 200
 elseif (nb == 1 .and. b(4) == 1.d0) then
 
@@ -1425,6 +1452,8 @@ elseif (nb == 1 .and. b(4) == 1.d0) then
     c(i+1) = a(i+1)
   enddo
 
+  c(na+4) = 0.d0
+  c(na+5) = 0.d0
   goto 200
 endif
 
@@ -1444,7 +1473,7 @@ do i = 1, nc + 4
   d(i+1) = 0.d0
 enddo
 
-do i = 0, nb + 4
+do i = 0, nb + 2
   b1(i) = mpb24x * aint (mpr24x * b(i+1))
   b2(i) = b(i+1) - b1(i)
 enddo
@@ -1518,8 +1547,8 @@ subroutine mpmuld (a, b, c, mpnw)
 
 implicit none
 integer i, ia, ib, k, mpnw, na, n1
-double precision a1, a2, b, bb, b1, b2, c1, c2, dc
-double precision a(0:mpnw+5), c(0:mpnw+5), d(0:mpnw+5)
+real (mprknd) a1, a2, b, bb, b1, b2, c1, c2, dc
+real (mprknd) a(0:), c(0:), d(0:mpnw+5)
 
 ! End of declaration
 
@@ -1538,6 +1567,8 @@ if (na == 0 .or. b == 0.d0) then
   c(1) = mpnw
   c(2) = 0.d0
   c(3) = 0.d0
+  c(4) = 0.d0
+  c(5) = 0.d0
   goto 140
 endif
 bb = abs (b)
@@ -1633,7 +1664,7 @@ subroutine mpmuld40 (a, b, c, mpnw)
 
 implicit none
 integer mpnw
-double precision a(0:mpnw+5), b, c(0:mpnw+5), t1, t2
+real (mprknd) a(0:), b, c(0:), t1, t2
 
 ! End of declaration
 
@@ -1654,7 +1685,7 @@ else
   write (mpldb, 2) b
 2 format ('*** MPMULD40: DP value has more than 40 significant bits:', &
   1p,d25.15/'and thus very likely represents an unintended loss of accuracy.'/ &
-  'Fix the issue, or else use functions mpprodd, mpquotd, mpreald or mpcmplxdc.'/ &
+  'Fix the issue, or else use functions mpprod, mpquot, mpreald or mpcmplxdc.'/ &
   'See documentation for details.')
   call mpabrt (83)
 endif
@@ -1669,7 +1700,7 @@ subroutine mpnint (a, b, mpnw)
 
 implicit none
 integer i, ia, ic, k0, k1, ma, na, mpnw
-double precision a(0:mpnw+5), b(0:mpnw+5), s0(0:mpnw+5), s1(0:mpnw+5)
+real (mprknd) a(0:), b(0:), s0(0:mpnw+5), s1(0:mpnw+5)
 
 ! End of declaration
 
@@ -1689,6 +1720,8 @@ if (na == 0)  then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 110
 endif
 
@@ -1730,8 +1763,8 @@ subroutine mpnorm (d, a, mpnw)
 
 implicit none
 integer i, ia, k, mpnw, na, n4
-double precision a2, s1, t1, t2, t3
-double precision d(0:mpnw+5), a(0:mpnw+5)
+real (mprknd) a2, s1, t1, t2, t3
+real (mprknd) d(0:), a(0:)
 
 ! End of declaration
 
@@ -1747,6 +1780,8 @@ if (na == 0)  then
   a(1) = mpnw
   a(2) = 0.d0
   a(3) = 0.d0
+  a(4) = 0.d0
+  a(5) = 0.d0
   goto 170
 endif
 n4 = na + 4
@@ -1820,9 +1855,9 @@ subroutine mpnpwr (a, n, b, mpnw)
 
 implicit none
 integer i, j, k, kk, kn, k0, k1, k2, mn, mpnw, mpnw1, n, na, nn, nws
-double precision cl2, t1, mprxx
+real (mprknd) cl2, t1, mprxx
 parameter (cl2 = 1.4426950408889633d0, mprxx = 1d-14)
-double precision a(0:mpnw+5), b(0:mpnw+5), s0(0:mpnw+6), s1(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), s0(0:mpnw+6), s1(0:mpnw+6), &
   s2(0:mpnw+6)
   
 ! End of declaration
@@ -1839,6 +1874,8 @@ if (na == 0) then
   	b(1) = mpnw
     b(2) = 0.d0
     b(3) = 0.d0
+    b(4) = 0.d0
+    b(5) = 0.d0
     goto 120
   else
     write (mpldb, 2)
@@ -1930,10 +1967,10 @@ subroutine mpnrtr (a, n, b, mpnw)
 implicit none
 integer i, ia, iq, k, k0, k1, k2, k3, mpnw, mpnw1, mq, n, na, nit, &
   n1, n2, n3, n5, n30
-double precision alt, cl2, t1, t2, tn, mprxx
+real (mprknd) alt, cl2, t1, t2, tn, mprxx
 parameter (alt = 0.693147180559945309d0, cl2 = 1.4426950408889633d0, &
   nit = 3, n30 = 2 ** 30, mprxx = 1d-14)
-double precision a(0:mpnw+5), b(0:mpnw+5), f1(0:8), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), f1(0:8), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6)
 
 ! End of declaration
@@ -1948,8 +1985,11 @@ ia = sign (1.d0, a(2))
 na = min (int (abs (a(2))), mpnw)
 
 if (na == 0) then
-  b(2) = 0.
-  b(3) = 0.
+  b(1) = mpnw
+  b(2) = 0.d0
+  b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 140
 endif
 if (ia < 0) then
@@ -2092,8 +2132,8 @@ subroutine mpoutw (iu, anam, a, mpnw)
 
 implicit none
 integer i, iu, mpnw, na
-character*(*) anam 
-double precision a(0:mpnw+5)
+character(*) anam 
+real (mprknd) a(0:)
 
 ! End of declaration
 
@@ -2113,7 +2153,7 @@ subroutine mproun (a, mpnw)
 
 implicit none
 integer i, ia, k, mpnw, na, n4
-double precision a(0:mpnw+5), a2
+real (mprknd) a(0:), a2
 
 ! End of declaration
 
@@ -2142,6 +2182,8 @@ if (a(4) == 0.d0) then
 
   a(2) = 0.d0
   a(3) = 0.d0
+  a(4) = 0.d0
+  a(5) = 0.d0
   goto 170
 
 110 continue
@@ -2189,8 +2231,11 @@ endif
     if (a(i+1) /= 0.d0) goto 160
   enddo
 
+  a(1) = mpnw
   a(2) = 0.d0
   a(3) = 0.d0
+  a(4) = 0.d0
+  a(5) = 0.d0
   goto 170
 
 160  continue
@@ -2216,6 +2261,8 @@ if (a(4) == 0.d0) then
   a(1) = mpnw
   a(2) = 0.d0
   a(3) = 0.d0
+  a(4) = 0.d0
+  a(5) = 0.d0
 else
   a(1) = mpnw
   a(2) = sign (na, ia)
@@ -2254,9 +2301,9 @@ subroutine mpsqrt (a, b, mpnw)
 implicit none
 integer i, ia, iq, k, k0, k1, k2, k3, mpnw, mpnw1, mq, n, na, nit, nws, &
   nw1, nw2, n2, n7
-double precision cl2, t1, t2, mprxx
+real (mprknd) cl2, t1, t2, mprxx
 parameter (cl2 = 1.4426950408889633d0, mprxx = 1d-14,  nit = 3)
-double precision a(0:mpnw+5), b(0:mpnw+5), s0(0:mpnw+6), s1(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), s0(0:mpnw+6), s1(0:mpnw+6), &
   s2(0:mpnw+6), s3(0:mpnw+6)
 
 ! End of declaration
@@ -2274,6 +2321,8 @@ if (na == 0) then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 120
 endif
 if (ia < 0.d0) then
@@ -2361,7 +2410,7 @@ subroutine mpsub (a, b, c, mpnw)
 
 implicit none
 integer i, nb, mpnw
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), s(0:mpnw+5)
+real (mprknd) a(0:), b(0:), c(0:), s(0:mpnw+5)
 
 ! End of declaration
 
@@ -2419,9 +2468,9 @@ subroutine mpdivx (a, b, c, mpnw)
 implicit none
 integer i, ia, ib, iq, k, k0, k1, k2, k3, mpnw, mpnw1, mq, n, na, nb, &
   nit, nws, nw1, nw2, n2, n7
-double precision cl2, t1, t2, mprxx
+real (mprknd) cl2, t1, t2, mprxx
 parameter (cl2 = 1.4426950408889633d0, mprxx = 1d-14,  nit = 3)
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), s0(0:mpnw+6), &
+real (mprknd) a(0:), b(0:), c(0:), s0(0:mpnw+6), &
   s1(0:mpnw+6), s2(0:mpnw+6), s3(0:mpnw+6)
 
 ! End of declaration
@@ -2442,6 +2491,8 @@ if (na == 0) then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 120
 endif
 if (nb == 0.d0) then
@@ -2853,7 +2904,7 @@ subroutine mpinifft (mpnw)
 
 implicit none
 integer i, iu, j, k, ku, ln, m, mm, mm1, mm2, mq, nn, nn1, nn2, nq, mpnw, nwds
-double precision cl2, d1, mprxx
+real (mprknd) cl2, d1, mprxx
 parameter (cl2 = 1.4426950408889633d0, mprxx = 1d-14)
 real (mprknd) pi, t1, ti, tpn
 
@@ -2936,7 +2987,7 @@ subroutine mplconv (iq, n, nsq, a, b, c)
 
 implicit none
 integer i, iq, m1, m2, n, n1, n2, n4, nm, nsq
-double precision cl2, c0, mprxx, mpffterrmx
+real (mprknd) cl2, c0, mprxx, mpffterrmx
 parameter (cl2 = 1.4426950408889633d0, mprxx = 1d-14, mpffterrmx = 0.375d0)
 real (mprknd) a(n), an, b(n), c(2*n), d1(6*n+2), d2(6*n+2), d3(6*n+2), t1, t2
 complex (mprknd) dc1(3*n+nsq*mpnsp1+3), dc2(3*n+nsq*mpnsp1+3)
@@ -3035,9 +3086,9 @@ subroutine mpmulx (a, b, c, mpnw)
 
 implicit none
 integer i, i1, ia, ib, j, k, mpnw, na, nb, nc, nn, nx
-double precision mprxx
+real (mprknd) mprxx
 parameter (mprxx = 1d-14)
-double precision a(0:mpnw+5), b(0:mpnw+5), c(0:mpnw+5), d(0:mpnw+7), &
+real (mprknd) a(0:), b(0:), c(0:), d(0:mpnw+7), &
   t0, t1, t2, t3, t4, t5, r16, t16, r32, t32, r48, t48
 parameter (r16 = 0.5d0**16, t16 = 2.d0**16, r32 = 0.5d0**32, t32 = 2.d0**32, &
   r48 = 0.5d0**48, t48 = 2.d0**48)
@@ -3132,6 +3183,7 @@ d(3) = a(3) + b(3) + 1
 !   Fix up the result.
 
 d1(0) = mpnw + 6
+
 call mpnorm (d, c, mpnw)
 
 190 continue
@@ -3139,23 +3191,23 @@ call mpnorm (d, c, mpnw)
 return
 end subroutine mpmulx
 
-!>   These two subroutines are for real*16 support.  See "Uncomment" below
+!>   These two subroutines are for IEEE quad support.  See "Uncomment" below
 !>   for differences.
 
 subroutine mpmqc (a, b, n, mpnw)
 
-!   This returns a quad (real*16) approximation the MPR number A in the form B * 2^n.
+!   This returns a IEEE quad approximation the MPR number A in the form B * 2^n.
 
 implicit none
 integer i, knd, mpnw, n, na
 
-!>  Uncomment this line if real*16 is supported.
- parameter (knd = kind (0.q0))
+!>  Uncomment this line if IEEE quad is supported.
+parameter (knd = kind (0.q0))
 !>  Otherwise uncomment this line.
 ! parameter (knd = kind (0.d0))
 
 real (knd) aa, b
-double precision a(0:mpnw+5)
+real (mprknd) a(0:)
 
 ! End of declaration
 
@@ -3199,24 +3251,24 @@ end subroutine mpmqc
 
 subroutine mpqmc (a, n, b, mpnw)
 
-!   This routine converts the quad (real*16) number A * 2^N to MPR form in B.
+!   This routine converts the IEEE quad number A * 2^N to MPR form in B.
 
 !   NOTE however that if A = 0.1q0, for example, then B will NOT be the true 
 !   multiprecision equivalent of 1/10, since 0.1q0 is not an exact binary value.
 
-!   Examples of exact binary values (good): 123456789.d0, 0.25d0, -5.3125d0.
-!   Examples of inexact binary values (bad): 0.1d0, 1234567.8d0, -3333.3d0.
+!   Examples of exact binary values (good): 123456789.q0, 0.25q0, -5.3125q0.
+!   Examples of inexact binary values (bad): 0.1q0, 1234567.8q0, -3333.3q0.
 
 implicit none
 integer i, k, knd, mpnw, n, n1, n2
 
-!>  Uncomment this line if real*16 is supported.
- parameter (knd = kind (0.q0))
+!>  Uncomment this line if IEEE quad is supported.
+parameter (knd = kind (0.q0))
 !>  Otherwise uncomment this line.
 ! parameter (knd = kind (0.d0))
 
 real (knd) a, aa
-double precision b(0:*)
+real (mprknd) b(0:*)
 
 ! End of declaration
 
@@ -3232,6 +3284,8 @@ if (a == 0.d0) then
   b(1) = mpnw
   b(2) = 0.d0
   b(3) = 0.d0
+  b(4) = 0.d0
+  b(5) = 0.d0
   goto 150
 endif
 n1 = n / mpnbt
@@ -3242,7 +3296,7 @@ aa = abs (a) * 2.d0 ** n2
 
 if (aa >= mpbdx) then
 
-  do k = 1, 100
+  do k = 1, 350
     aa = mprdx * aa
     if (aa < mpbdx) then
       n1 = n1 + k
@@ -3252,7 +3306,7 @@ if (aa >= mpbdx) then
 
 elseif (aa < 1.d0) then
 
-  do k = 1, 100
+  do k = 1, 350
     aa = mpbdx * aa
     if (aa >= 1.d0) then
       n1 = n1 - k

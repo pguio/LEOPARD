@@ -3,7 +3,7 @@
 !  MPFUN-Fort: A thread-safe arbitrary precision computation package
 !  Precision level declaration module (module MPFUNF)
 
-!  Revision date:  19 Jul 2015
+!  Revision date:  14 Jun 2021
 
 !  AUTHOR:
 !     David H. Bailey
@@ -11,7 +11,7 @@
 !     Email: dhbailey@lbl.gov
 
 !  COPYRIGHT AND DISCLAIMER:
-!    All software in this package (c) 2015 David H. Bailey.
+!    All software in this package (c) 2021 David H. Bailey.
 !    By downloading or using this software you agree to the copyright, disclaimer
 !    and license agreement in the accompanying file DISCLAIMER.txt.
 
@@ -43,10 +43,10 @@
 !    the equivalent precision level in words (mpwds), which is calculated
 !    below according to the formula:
 !       mpwds = int (mpipl / mpdpw + 2)
-!    where mpdpw = 14.449439791871... is an approximation to log10(2^48).
-!    This precision level is the working precision level for all operations,
-!    unless one dynamically varies the working precision level, in which case
-!    this is the maximum precision level for the entire calculation.
+!    (mpdpw is set in module MPFUNA). This precision level is the working
+!    precision level for all operations that use module MPFUNG, unless one
+!    dynamically varies the medium precision level, in which case this is the
+!    maximum working precision level.
 
 module mpfunf
 use mpfuna
@@ -59,7 +59,7 @@ integer, public:: mpipl
 
 !  *** Set the default precision level (in digits) here.
 
-parameter (mpipl = 1200)
+parameter (mpipl = 2500)
 
 !----------------------------------------------------------------------------
 
