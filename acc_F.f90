@@ -108,7 +108,7 @@ subroutine acc_F(z,ndp,nfrac)
      nfrac=2277
   else
      write(*,*) 'Bessel argument very large!'
-     write(*,*) 'Increase precision manually to ndp>477 and nfrac>1492'
+     write(*,*) 'Increase precision manually to ndp>',ndp,'and nfrac>',nfrac
      stop
   endif
 
