@@ -37,15 +37,12 @@ F12.f90 F12_mpfun.f90 F23.f90 F23_mpfun.f90 \
 gamma_func.f90 acc_F.f90 acc_Kvpa.f90 get_splinecoeff.f90 \
 exp_Bessel_In_mpfun.f90 fort_Bes.f90
 dsolve_FCFLAGS = -fdefault-real-8 -J$(top_srcdir) -I$(top_srcdir)
-dsolve_DEPENDENCIES = mpfuna.o mpfunbq.o mpfunc.o mpfund.o mpfune.o mpfunf.o mpfungq2.o mpmodule.o libmpfun.a
+dsolve_DEPENDENCIES = libmpfun.a 
 dsolve_LDADD = libmpfun.a
 
 # A fib -- the real dependency is int_para_mpfun2015.o: mpmodule.mod
-dsolve-int_para_mpfun2015.o: mpfuna.o mpfunbq.o mpfunc.o mpfund.o mpfune.o mpfunf.o mpfungq2.o mpmodule.o
+dsolve-int_para_mpfun2015.o: libmpfun.a 
 	 $(AM_V_FC)$(FC) $(dsolve_FCFLAGS) $(FCFLAGS) -c -o dsolve-int_para_mpfun2015.o `if test -f 'int_para_mpfun2015.f90'; then $(CYGPATH_W) 'int_para_mpfun2015.f90'; else $(CYGPATH_W) '$(srcdir)/int_para_mpfun2015.f90'; fi`
-
-#mpmodule.o: mpfuna.o mpfunbq.o mpfunc.o mpfund.o mpfune.o mpfunf.o mpfungq2.o
-#int_para_mpfun2015.o: $(mpfun_srcdir)/mpmodule.mod
 
 
 dsolve20_SOURCES = param_mod.f90 main.f90 disp_det.f90 \
@@ -57,11 +54,11 @@ F12.f90 F12_mpfun.f90 F23.f90 F23_mpfun.f90 \
 gamma_func.f90 acc_F.f90 acc_Kvpa.f90 get_splinecoeff.f90 \
 exp_Bessel_In_mpfun.f90 fort_Bes.f90
 dsolve20_FCFLAGS = -fdefault-real-8 -J$(top_srcdir) -I$(top_srcdir)
-dsolve20_DEPENDENCIES = mpfuna.o mpfunb.o mpfunc.o mpfund.o mpfune.o mpfunf.o mpfung1.o mpmask13.o mpmodule.o libmpfun20.a
+dsolve20_DEPENDENCIES = libmpfun20.a
 dsolve20_LDADD = libmpfun20.a
 
 # A fib -- the real dependency is int_para_mpfun2020.o: mpmodule.mod
-dsolve20-int_para_mpfun2020.o: mpfuna.o mpfunb.o mpfunc.o mpfund.o mpfune.o mpfunf.o mpfung1.o mpmask13.o mpmodule.o
+dsolve20-int_para_mpfun2020.o: libmpfun20.a 
 	 $(AM_V_FC)$(FC) $(dsolv20_FCFLAGS) $(FCFLAGS) -c -o dsolve20-int_para_mpfun2020.o `if test -f 'int_para_mpfun2020.f90'; then $(CYGPATH_W) 'int_para_mpfun2020.f90'; else $(CYGPATH_W) '$(srcdir)/int_para_mpfun2020.f90'; fi`
 
 
