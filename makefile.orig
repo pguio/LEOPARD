@@ -144,8 +144,4 @@ fort_Bes.o: fort_Bes.f90
 	$(f90comp) -c $(options)  fort_Bes.f90
 
 clean:
-	rm dsolve 
-	rm param_mod.mod
-	rm $(objects)
-	rm $(mpfun_mod)
-	rm $(mpfun_obj)
+	-rm -rf dsolve param_mod.mod $(objects) $(mpfun_mod) $(mpfun_obj)
