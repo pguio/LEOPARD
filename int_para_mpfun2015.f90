@@ -116,7 +116,7 @@ subroutine int_para_mpfun(iarb,ipara,ndp,k,zeta,Kvpa)
   endif
 
   do l=1,6
-     Kvpa(l)=qreal(mpreal(sol(l)))+i*qreal(aimag(sol(l)))
+     Kvpa(l)=qreal(mpreal(sol(l),ndws))+i*qreal(aimag(sol(l)))
   enddo
 
 
