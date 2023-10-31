@@ -25,6 +25,17 @@ subroutine int_para_mpfun(iarb,ipara,ndp,k,zeta,Kvpa)
 
   ndws = int (ndp / mpdpw + 2)
 
+! Uncomment this line for MPFUN20-Fort when precision > 20,000 digits.
+! call mpinit (nwds)
+
+! Check to see if precision level in MPFUNF is high enough.
+!  if (ndp > mpipl) then
+!    write (6, 1) ndp
+!1 format ('Increase the default standard precision in MPFUNF to at least', &
+!      i8,' digits'/)
+!    stop
+!  endif
+
   vpa1=mpreald(vpara(ipara,iarb),ndws)
   vpa2=mpreald(vpara(ipara+1,iarb),ndws)
 
