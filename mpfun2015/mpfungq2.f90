@@ -5,7 +5,7 @@
 !  Variant Q2: Precision level specifications are *required*; includes IEEE quad support.
 !  Search for !> for version differences.
 
-!  Revision date:  14 Jun 2021
+!  Revision date:  18 Nov 2021
 
 !  AUTHOR:
 !     David H. Bailey
@@ -106,14 +106,15 @@ private &
   mp_anint, mp_asin, mp_asinh, mp_atan, mp_atan2, mp_atanh, mp_ator1, &
   mp_atorn, mp_berne, mp_besselj, mp_bessel_j0, mp_bessel_j1, &
   mp_bessel_jn, mp_ccos, mp_cexp, mp_clog, mp_conjg, mp_cos, mp_cosh, &
-  mp_csin, mp_csqrt, mp_cssh, mp_cssn, mp_dctoz, mp_dctoz2, mp_dtor, &
-  mp_dtor2, mp_eform, mp_egamma, mp_erf, mp_erfc, mp_exp, mp_fform, &
-  mp_gamma, mp_hypot, mp_incgamma, mp_init, mp_log, mp_log2, mp_max, &
-  mp_mdi, mp_min, mp_mod, mp_nrt, mp_pi, mp_prodd, mp_quotd, mp_readr1, &
-  mp_readr2, mp_readr3, mp_readr4, mp_readr5, mp_readz1, mp_readz2, &
-  mp_readz3, mp_readz4, mp_readz5, mp_rtod, mp_rtor, mp_rtoz, mp_setwp, &
-  mp_sign, mp_sin, mp_sinh, mp_sqrt, mp_tan, mp_tanh, mp_wprec, mp_wprecz, &
-  mp_writer, mp_writez, mp_zeta, mp_zetaem, mp_ztodc, mp_ztor, mp_ztoz
+  mp_csin, mp_csqrt, mp_cssh, mp_cssn, mp_dctoz, mp_dctoz2, mp_decmd, &
+  mp_dtor, mp_dtor2, mp_eform, mp_egamma, mp_erf, mp_erfc, mp_exp, &
+  mp_fform, mp_gamma, mp_hypot, mp_incgamma, mp_init, mp_log, mp_log2, &
+  mp_max, mp_mdi, mp_min, mp_mod, mp_nrt, mp_pi, mp_prodd, mp_quotd, &
+  mp_readr1, mp_readr2, mp_readr3, mp_readr4, mp_readr5, mp_readz1, &
+  mp_readz2, mp_readz3, mp_readz4, mp_readz5, mp_rtod, mp_rtor, mp_rtoz, &
+  mp_setwp, mp_sign, mp_sin, mp_sinh, mp_sqrt, mp_tan, mp_tanh, mp_wprec, &
+  mp_wprecz, mp_writer, mp_writez, mp_zeta, mp_zetaem, mp_ztodc, mp_ztor, &
+  mp_ztoz
 
 !>  This line is for IEEE quad support.  No need to change either way.
 
@@ -420,6 +421,10 @@ end interface
 
 interface mpcssn
   module procedure mp_cssn
+end interface
+
+interface mpdecmd
+  module procedure mp_decmd
 end interface
 
 interface mpeform
@@ -3238,6 +3243,27 @@ contains
     return
   end function
   
+  subroutine mp_decmd (ra, db, ib)
+    implicit none
+    type (mp_real), intent (in):: ra
+    real (mprknd), intent (out):: db
+    integer, intent (out):: ib
+    real (mprknd) alg102, dt1, dt2
+    parameter (alg102 = 0.301029995663981195d0)
+    integer i1, mpnw
+    mpnw = min (int (ra%mpr(1)), mpwds)
+    call mpmdc (ra%mpr, dt1, i1, mpnw)
+    if (dt1 /= 0.d0) then
+      dt2 = alg102 * i1 + log10 (abs (dt1))
+      ib = dt2
+      if (dt2 < 0.d0) ib = ib - 1
+      db = sign (10.d0 ** (dt2 - ib), dt1)
+    else
+      db = 0.d0
+      ib = 0
+    endif
+  end subroutine
+
   function mp_dtor (da, iprec)
     implicit none
     type (mp_real):: mp_dtor
@@ -3760,6 +3786,7 @@ contains
 
     z1%mpc(0) = mpwds6
     l1 = mpwds6
+    z1%mpc(l1) = mpwds6
     call mpinp (iu, z1%mpc, mpnw)
     call mpinp (iu, z1%mpc(l1:), mpnw)
     return
@@ -3784,8 +3811,10 @@ contains
 
     z1%mpc(0) = mpwds6
     l1 = mpwds6
+    z1%mpc(l1) = mpwds6
     z2%mpc(0) = mpwds6
     l2 = mpwds6
+    z2%mpc(l2) = mpwds6
     call mpinp (iu, z1%mpc, mpnw)
     call mpinp (iu, z1%mpc(l1:), mpnw)
     call mpinp (iu, z2%mpc, mpnw)
@@ -3812,10 +3841,13 @@ contains
 
     z1%mpc(0) = mpwds6
     l1 = mpwds6
+    z1%mpc(l1) = mpwds6
     z2%mpc(0) = mpwds6
     l2 = mpwds6
+    z2%mpc(l2) = mpwds6
     z3%mpc(0) = mpwds6
     l3 = mpwds6
+    z3%mpc(l3) = mpwds6
     call mpinp (iu, z1%mpc, mpnw)
     call mpinp (iu, z1%mpc(l1:), mpnw)
     call mpinp (iu, z2%mpc, mpnw)
@@ -3844,12 +3876,16 @@ contains
 
     z1%mpc(0) = mpwds6
     l1 = mpwds6
+    z1%mpc(l1) = mpwds6
     z2%mpc(0) = mpwds6
     l2 = mpwds6
+    z2%mpc(l2) = mpwds6
     z3%mpc(0) = mpwds6
     l3 = mpwds6
+    z3%mpc(l3) = mpwds6
     z4%mpc(0) = mpwds6
     l4 = mpwds6
+    z4%mpc(l4) = mpwds6
     call mpinp (iu, z1%mpc, mpnw)
     call mpinp (iu, z1%mpc(l1:), mpnw)
     call mpinp (iu, z2%mpc, mpnw)
@@ -3880,14 +3916,19 @@ contains
 
     z1%mpc(0) = mpwds6
     l1 = mpwds6
+    z1%mpc(l1) = mpwds6
     z2%mpc(0) = mpwds6
     l2 = mpwds6
+    z2%mpc(l2) = mpwds6
     z3%mpc(0) = mpwds6
     l3 = mpwds6
+    z3%mpc(l3) = mpwds6
     z4%mpc(0) = mpwds6
     l4 = mpwds6
+    z4%mpc(l4) = mpwds6
     z5%mpc(0) = mpwds6
     l5 = mpwds6
+    z5%mpc(l5) = mpwds6
     call mpinp (iu, z1%mpc, mpnw)
     call mpinp (iu, z1%mpc(l1:), mpnw)
     call mpinp (iu, z2%mpc, mpnw)
@@ -3916,15 +3957,16 @@ contains
     implicit none
 
 !>  If IEEE quad is supported, uncomment this line:
-    real (kind (0.q0)):: mp_rtoq
+    real (kind (0.q0)):: mp_rtoq, t2
 !>  Otherwise uncomment this line:
-!    real (kind (0.d0)):: mp_rtoq
+!    real (kind (0.d0)):: mp_rtoq, t2
 
     type (mp_real), intent (in):: ra
     integer n1, mpnw
     mpnw = min (int (ra%mpr(1)), mpwds)
     call mpmqc (ra%mpr, mp_rtoq, n1, mpnw)
-    mp_rtoq = mp_rtoq * 2.d0**n1
+    t2 = 2.d0
+    mp_rtoq = mp_rtoq * t2**n1
     return
   end function
 
