@@ -39,7 +39,7 @@ Bessel_int.f90 int_para.f90 int_para_mpfun2015.f90 \
 F12.f90 F12_mpfun.f90 F23.f90 F23_mpfun.f90 \
 gamma_func.f90 acc_F.f90 acc_Kvpa.f90 get_splinecoeff.f90 \
 exp_Bessel_In_mpfun.f90 fort_Bes.f90
-dsolve_FCFLAGS = -fdefault-real-8 -ffpe-trap=invalid -ffpe-trap=zero -ffpe-trap=overflow -J$(top_srcdir)/mpfun2015
+dsolve_FCFLAGS = -fdefault-real-8 -ffpe-trap=invalid -ffpe-trap=zero -ffpe-trap=overflow -J$(mpfun_srcdir)
 dsolve_DEPENDENCIES = libmpfun.a 
 dsolve_LDADD = libmpfun.a
 
@@ -66,9 +66,9 @@ dsolve20-int_para_mpfun2020.o: libmpfun20.a int_para_mpfun2020.f90
 
 
 libmpfun_a_SOURCES = $(mpfun_src)
-libmpfun_a_FCFLAGS = -J$(top_srcdir)/mpfun2015
+libmpfun_a_FCFLAGS = -J$(mpfun_srcdir)
 
 libmpfun20_a_SOURCES = $(mpfun20_src)
-libmpfun20_a_FCFLAGS = -J$(top_srcdir)/mpfun2020
+libmpfun20_a_FCFLAGS = -J$(mpfun20_srcdir)
 
-CLEANFILES = *.mod
+CLEANFILES = *.mod $(mpfun_srcdir)/*mod $(mpfun20_srcdir)/*mod
