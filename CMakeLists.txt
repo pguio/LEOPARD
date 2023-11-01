@@ -84,6 +84,12 @@ set(real_flags "-fdefault-real-8")
 set_source_files_properties(main.f90 int_para_mpfun.f90 ${leopard_src} PROPERTIES
 COMPILE_OPTIONS ${real_flags})
 
+# add no inderscoring for Fortran and C mixing
+set(no__flags "-fno-underscoring")
+set_source_files_properties(mpfunmpfr/mpmodule.f90 mpfunmpfr/mpfuna.f90
+mpfunmpfr/mpfunf.f90 mpfunmpfr/mpfungq2.f90 mpfunmpfr/mpfunhq2.f90
+mpfunmpfr/second.f90 PROPERTIES COMPILE_OPTIONS ${no__flags})
+
 find_library(mpfr NAMES mpfr HINTS /usr/lib64)
 
 #   Libraries
@@ -94,7 +100,6 @@ add_library(mpfun20 STATIC ${mpfun20_src})
 set_target_properties(mpfun20 PROPERTIES Fortran_MODULE_DIRECTORY ${mpfun2020})
 
 add_library(mpfunmpfr STATIC ${mpfunmpfr_src})
-target_compile_options(mpfunmpfr PUBLIC "-fno-underscoring")
 set_target_properties(mpfunmpfr PROPERTIES Fortran_MODULE_DIRECTORY ${mpfunmpfr})
 
 add_library(leopard STATIC ${leopard_src})
