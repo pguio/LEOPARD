@@ -23,7 +23,7 @@ subroutine int_para_mpfun(iarb,ipara,ndp,k,zeta,Kvpa)
   type(mp_real) :: zeta_r_mp
   type(mp_real) :: zeta_i_mp
 
-  ndws = int (ndp / mpdpw + 2)
+  ndws = max(4, int (ndp / mpdpw + 2))
 
 ! Uncomment this line for MPFUN20-Fort when precision > 20,000 digits.
 ! call mpinit (nwds)
@@ -36,6 +36,7 @@ subroutine int_para_mpfun(iarb,ipara,ndp,k,zeta,Kvpa)
 !    stop
 !  endif
 
+!  write(*,*)" ndp=",ndp," mpdpw=",mpdpw," ndws=",ndws
   vpa1=mpreald(vpara(ipara,iarb),ndws)
   vpa2=mpreald(vpara(ipara+1,iarb),ndws)
 
