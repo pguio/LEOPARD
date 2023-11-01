@@ -21,6 +21,7 @@ Configuring $PACKAGE_STRING for $target
 
 # Checks for programs.
 AC_PROG_FC([gfortran])
+AC_PROG_CC([gcc])
 AC_PROG_RANLIB
 
 AC_LANG(Fortran)
@@ -29,6 +30,8 @@ dnl Checks for libraries.
 AC_FC_LIBRARY_LDFLAGS
 
 dnl Checks for header files.
+AC_CHECK_HEADER([mpfr.h], [AC_DEFINE(HAVE_MPFR_H)])
+AM_CONDITIONAL([MPFR], [test "x$ac_cv_header_mpfr_h" = xyes])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 
